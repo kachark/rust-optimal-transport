@@ -18,6 +18,8 @@
 
 extern crate nalgebra as na;
 
+use std::error::Error;
+use std::fmt;
 use na::{dvector, DVector, DMatrix};
 
 #[cxx::bridge]
@@ -32,6 +34,32 @@ mod ffi {
 
 }
 
+enum ProblemType {
+    INFEASIBLE=0,
+    OPTIMAL=1,
+    UNBOUNDED=2,
+    MAX_ITER_REACHED=3
+}
+
+#[derive(Debug)]
+struct ProblemError {
+    details: String
+}
+
+impl fmt::Display for ProblemError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.details)
+    }
+}
+
+impl Error for ProblemError {
+    fn description(&self) -> &str {
+        &self.details
+    }
+}
+
+
+// TODO: return ProblemType/ResultCode instead of i32
 #[allow(non_snake_case)]
 fn emd_c(a: &mut DVector<f64>, b: &mut DVector<f64>, M: &mut DMatrix<f64>, max_iter: i32)
     -> (DMatrix<f64>, f64, DVector<f64>, DVector<f64>, i32) {
@@ -70,6 +98,50 @@ fn emd_c(a: &mut DVector<f64>, b: &mut DVector<f64>, M: &mut DMatrix<f64>, max_i
     }
 
     (G, cost, alpha, beta, result_code)
+
+}
+
+fn center_ot_dual(alpha0: &DVector<f64>, beta0: &DVector<f64>,
+                  a: Option<&DVector<f64>>, b: Option<&DVector<f64>>)
+    -> (DVector<f64>, DVector<f64>) {
+
+    let mut a_vec: DVector<f64>;
+    let mut b_vec: DVector<f64>;
+
+    if a == None {
+        let ns = alpha0.len();
+        a_vec = DVector::from_vec(vec![1f64; ns]).scale(1f64/ (ns as f64))
+    } else {
+        a_vec = a.unwrap().clone();
+    }
+
+    if b == None {
+        let nt = beta0.len();
+        b_vec = DVector::from_vec(vec![1f64; nt]).scale(1f64/ (nt as f64))
+    } else {
+        b_vec = b.unwrap().clone();
+    }
+
+    let c = (b_vec.dot(beta0) - a_vec.dot(alpha0)) / (a_vec.sum() + b_vec.sum());
+
+    (alpha0.add_scalar(c), beta0.add_scalar(-c))
+
+}
+
+// TODO: implement estimate_dual_null_weights()
+
+// TODO: make this a function over ProblemType/ResultCode and not i32. then match against it
+fn check_result(result_code: i32) -> Result<(), ProblemError> {
+
+    if result_code == ProblemType::OPTIMAL as i32 {
+        Ok(())
+    } else if result_code == ProblemType::UNBOUNDED as i32 {
+        Err( ProblemError{details: String::from("Problem unbounded")} )
+    } else if result_code == ProblemType::MAX_ITER_REACHED as i32 {
+        Err( ProblemError{details: String::from("numItermax reached before optimality. Try to increase numItermax")} )
+    } else {
+        Err( ProblemError{details: String::from("Problem infeasible. Check that a and b are in the simplex")} )
+    }
 
 }
 
