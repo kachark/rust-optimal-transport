@@ -101,12 +101,14 @@ fn emd_c(a: &mut DVector<f64>, b: &mut DVector<f64>, M: &mut DMatrix<f64>, max_i
 
 }
 
-fn center_ot_dual(alpha0: &DVector<f64>, beta0: &DVector<f64>,
-                  a: Option<&DVector<f64>>, b: Option<&DVector<f64>>)
-    -> (DVector<f64>, DVector<f64>) {
+fn center_ot_dual(
+    alpha0: &DVector<f64>, beta0: &DVector<f64>,
+    a: Option<&DVector<f64>>, b: Option<&DVector<f64>>)
+    -> (DVector<f64>, DVector<f64>)
+{
 
-    let mut a_vec: DVector<f64>;
-    let mut b_vec: DVector<f64>;
+    let a_vec: DVector<f64>;
+    let b_vec: DVector<f64>;
 
     if a == None {
         let ns = alpha0.len();
@@ -129,8 +131,77 @@ fn center_ot_dual(alpha0: &DVector<f64>, beta0: &DVector<f64>,
 }
 
 // TODO: implement estimate_dual_null_weights()
+fn estimate_dual_null_weights(
+    alpha0: &DVector<f64>, beta0: &DVector<f64>,
+    a: &DVector<f64>, b: &DVector<f64>,
+    M: &DMatrix<f64>)
+    -> (DVector<f64>, DVector<f64>)
+{
 
-// TODO: make this a function over ProblemType/ResultCode and not i32. then match against it
+    // binary indexing of non-zero weights
+    let mut asel = DVector::<i32>::zeros(a.len());
+    for (i, val) in a.iter().enumerate() {
+        if *val == 0f64 {
+            asel[i] = 0;
+        } else {
+            asel[i] = 1;
+        }
+    }
+
+    let mut bsel = DVector::<i32>::zeros(b.len());
+    for (i, val) in b.iter().enumerate() {
+        if *val == 0f64 {
+            bsel[i] = 0;
+        } else {
+            bsel[i] = 1;
+        }
+    }
+
+    // compute dual constraints violation
+    // TODO: alpha0 as a col vec added to each col of row vec beta0
+    // to make a matrix
+    let mut tmp = DMatrix::<f64>::zeros(alpha0.len(), beta0.len());
+    for (i, valx) in alpha0.iter().enumerate() {
+       for (j, valy) in beta0.iter().enumerate() {
+            tmp[(i,j)] = valx + valy;
+        }
+    }
+
+    let constraint_violation = tmp - M;
+
+    // compute largest violation per line and columns
+    // TODO: we want the max in col dimension for aviol and max in row dimension for bviol
+    let mut aviol = DVector::<f64>::zeros(alpha0.len());
+    for (j, row) in constraint_violation.row_iter().enumerate() {
+        aviol[j] = row.max();
+    }
+
+    let mut bviol = DVector::<f64>::zeros(beta0.len());
+    for (i, col) in constraint_violation.column_iter().enumerate() {
+        bviol[i] = col.max();
+    }
+
+    // update
+    let max_aviol = aviol.max();
+    let mut alpha_up = DVector::<f64>::zeros(alpha0.len());
+    for (i, selection) in asel.iter().enumerate() {
+        alpha_up[i] = -1f64 * (!selection as f64) * (max_aviol as f64);
+    }
+
+    let max_bviol = bviol.max();
+    let mut beta_up = DVector::<f64>::zeros(beta0.len());
+    for (i, selection) in bsel.iter().enumerate() {
+        beta_up[i] = -1f64 * (!selection as f64) * (max_bviol as f64);
+    }
+
+    let alpha = alpha0 + alpha_up;
+    let beta = beta0 + beta_up;
+
+    center_ot_dual(&alpha, &beta, Some(a), Some(b))
+
+}
+
+
 fn check_result(result_code: i32) -> Result<(), ProblemError> {
 
     if result_code == ProblemType::OPTIMAL as i32 {
