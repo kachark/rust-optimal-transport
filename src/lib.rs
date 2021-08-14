@@ -22,6 +22,8 @@ use std::error::Error;
 use std::fmt;
 use na::{dvector, DVector, DMatrix};
 
+pub mod utils;
+
 #[cxx::bridge]
 mod ffi {
 
@@ -160,7 +162,7 @@ fn estimate_dual_null_weights(
     }
 
     // compute dual constraints violation
-    // TODO: alpha0 as a col vec added to each col of row vec beta0
+    // NOTE: alpha0 as a col vec added to each col of row vec beta0
     // to make a matrix
     let mut tmp = DMatrix::<f64>::zeros(alpha0.len(), beta0.len());
     for (i, valx) in alpha0.iter().enumerate() {
@@ -172,7 +174,7 @@ fn estimate_dual_null_weights(
     let constraint_violation = tmp - M;
 
     // compute largest violation per line and columns
-    // TODO: we want the max in col dimension for aviol and max in row dimension for bviol
+    // NOTE: we want the max in col dimension for aviol and max in row dimension for bviol
     let mut aviol = DVector::<f64>::zeros(alpha0.len());
     for (j, row) in constraint_violation.row_iter().enumerate() {
         aviol[j] = row.max();
