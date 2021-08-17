@@ -48,13 +48,6 @@ fn euclidean_distances(x: &DMatrix<f64>, y: &DMatrix<f64>, squared: bool) -> DMa
     // einsum('ij,ij->i', Y, Y)
     let b2 = y.component_mul(y).column_sum();
 
-    // for y = 3x3 mtx of 5.0, b2 = [75, 75, 75]
-
-    // println!("a2: {:?}", a2);
-    // println!("b2: {:?}", b2);
-
-    // let tmpscalar = -2f64 * x.dot(&y.transpose());
-    // let mut tmp = DMatrix::<f64>::zeros(a2.len(), b2.len());
     let mut c = (x * &y.transpose()).scale(-2f64);
 
     // c += a2[:, None]
