@@ -18,20 +18,23 @@ The library has been tested on MacOSX. It requires a C++ compiler for building/i
 - nalgebra 0.29.0
 
 #### Cargo installation
-Edit your Cargo.toml with the following to add ROT as a dependency
+Edit your Cargo.toml with the following to add ROT as a dependency (uses git url pending repository publishing on Cargo)
+NOTE: Update to the latest commit with ```cargo update```.
 
 ```toml
 [dependencies]
-rust-optimal-transport = "0.1.0"
+rust-optimal-transport = { git = "https://github.com/kachark/rust-optimal-transport", branch = "master" }
 ```
 
 ## Examples
 
 ### Short examples
 
-* Import the toolbox
+* Import the library
 
 ```rust
+extern crate rust_optimal_transport as ot;
+
 use ot::emd;
 use ot::utils::metrics::{dist, MetricType};
 ```
