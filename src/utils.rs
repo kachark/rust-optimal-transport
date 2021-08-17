@@ -10,6 +10,10 @@ pub enum MetricType {
     Euclidean
 }
 
+/// Compute distance between samples in x1 and x2
+/// x1: matrix with n1 samples of size d
+/// x2: matrix with n2 samples of size d (if None then x2=x1)
+/// metric: choice of distance metric
 pub fn dist(x1: &DMatrix<f64>, x2: Option<&DMatrix<f64>>, metric: MetricType) -> DMatrix<f64> {
 
     let x2 = match x2 {
@@ -28,6 +32,11 @@ pub fn dist(x1: &DMatrix<f64>, x2: Option<&DMatrix<f64>>, metric: MetricType) ->
 
 }
 
+/// Considering the rows of X (and Y=X) as vectors, compute the distance matrix between each pair
+/// of vectors
+/// X: matrix of nsamples x nfeatures
+/// Y: matrix of nsamples x nfeatures
+/// squared: Return squared Euclidean distances
 fn euclidean_distances(x: &DMatrix<f64>, y: &DMatrix<f64>, squared: bool) -> DMatrix<f64> {
 
     // einsum('ij,ij->i', X, X)

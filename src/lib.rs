@@ -20,7 +20,7 @@ extern crate nalgebra as na;
 
 use std::error::Error;
 use std::fmt;
-use na::{dvector, DVector, DMatrix};
+use na::{DVector, DMatrix};
 
 pub mod utils;
 
@@ -67,13 +67,11 @@ fn emd_c(a: &mut DVector<f64>, b: &mut DVector<f64>, M: &mut DMatrix<f64>, max_i
 
     let (n1, n2) = M.shape();
     let _nmax = n1 + n2 - 1;
-    let mut result_code = 0i32;
     let _nG = 0i32;
     let mut cost = 0f64;
     let mut alpha = DVector::<f64>::zeros(n1);
     let mut beta = DVector::<f64>::zeros(n2);
-    let mut G = DMatrix::<f64>::zeros(2, 2);
-    let Gv = dvector![0];
+    let mut G = DMatrix::<f64>::zeros(n1, n2);
 
     if a.len() == 0 {
         *a = DVector::from_vec(vec![1f64; n1]).scale(1f64/n1 as f64);
@@ -83,10 +81,8 @@ fn emd_c(a: &mut DVector<f64>, b: &mut DVector<f64>, M: &mut DMatrix<f64>, max_i
         *b = DVector::from_vec(vec![1f64; n2]).scale(1f64/n2 as f64);
     }
 
-    G = DMatrix::<f64>::zeros(n1, n2);
-
     unsafe {
-    result_code = ffi::EMD_wrap(n1 as i32,
+    let result_code = ffi::EMD_wrap(n1 as i32,
                            n2 as i32,
                            a.as_mut_ptr(),
                            b.as_mut_ptr(),
@@ -96,9 +92,10 @@ fn emd_c(a: &mut DVector<f64>, b: &mut DVector<f64>, M: &mut DMatrix<f64>, max_i
                            beta.as_mut_ptr(),
                            &mut cost,
                            max_iter);
-    }
 
     (G, cost, alpha, beta, result_code)
+
+    }
 
 }
 
@@ -118,9 +115,6 @@ fn center_ot_dual(
         a_vec = a.unwrap().clone();
     }
 
-    println!("a_vec {:?}", a_vec);
-    println!("alpha0 {:?}", alpha0);
-
     if b == None {
         let nt = beta0.len();
         b_vec = DVector::from_vec(vec![1f64; nt]).scale(1f64/ (nt as f64))
@@ -135,6 +129,22 @@ fn center_ot_dual(
 
 }
 
+/// Estimate feasible values for 0-weighted dual potentials
+///
+/// The feasible values are computed efficiently but rather coarsely
+///
+/// This function is necessary because the C++ solver in emd_c
+/// discards all samples in the distributions with 
+/// zeros weights. This means that while the primal variable (transport 
+/// matrix) is exact, the solver only returns feasible dual potentials
+/// on the samples with weights different from zero.
+///
+/// alpha0: Source dual potential
+/// beta0: Target dual potential
+/// a: Source distribution (uniform weights if empty)
+/// b: Target distribution (uniform weights if empty)
+/// M: Loss matrix (row-major)
+#[allow(non_snake_case)]
 fn estimate_dual_null_weights(
     alpha0: &DVector<f64>, beta0: &DVector<f64>,
     a: &DVector<f64>, b: &DVector<f64>,
@@ -205,6 +215,13 @@ fn estimate_dual_null_weights(
 
 }
 
+/// Solves the Earth Movers distance problem and returns the OT matrix
+/// a: Source histogram (uniform weight if empty)
+/// b: Target histogram (uniform weight if empty)
+/// M: Loss matrix (row-major)
+/// num_iter_max: maximum number of iterations before stopping the optimization algorithm if it has
+/// not converged
+/// center_dual: If True, centers the dual potential using function
 #[allow(non_snake_case)]
 pub fn emd(a: &mut DVector<f64>, b: &mut DVector<f64>,
        M: &mut DMatrix<f64>, num_iter_max: i32,
@@ -212,7 +229,7 @@ pub fn emd(a: &mut DVector<f64>, b: &mut DVector<f64>,
 
     let (m0, m1) = M.shape();
 
-    // Uniform distribution
+    // if a and b empty, default to uniform distribution
     if a.len() == 0 {
         *a = DVector::from_vec(vec![1f64; m0]).scale(1f64/m0 as f64);
     }
@@ -281,6 +298,8 @@ fn check_result(result_code: i32) -> Result<(), ProblemError> {
         Err( ProblemError{details: String::from("Problem unbounded")} )
     } else if result_code == ProblemType::MaxIterReached as i32 {
         Err( ProblemError{details: String::from("numItermax reached before optimality. Try to increase numItermax")} )
+    } else if result_code == ProblemType::Infeasible as i32 {
+        Err( ProblemError{details: String::from("Problem infeasible. Check that a and b are in the simplex")} )
     } else {
         Err( ProblemError{details: String::from("Problem infeasible. Check that a and b are in the simplex")} )
     }
@@ -298,6 +317,7 @@ mod tests {
         assert_eq!(2 + 2, 4);
     }
 
+    #[allow(non_snake_case)]
     #[test]
     fn test_emd_c() {
 
@@ -313,6 +333,7 @@ mod tests {
 
     }
 
+    #[allow(non_snake_case)]
     #[test]
     fn test_emd() {
 
