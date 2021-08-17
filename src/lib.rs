@@ -312,11 +312,6 @@ mod tests {
 
     use na::{dvector, DMatrix};
 
-    #[test]
-    fn it_works() {
-        assert_eq!(2 + 2, 4);
-    }
-
     #[allow(non_snake_case)]
     #[test]
     fn test_emd_c() {
@@ -329,7 +324,13 @@ mod tests {
 
         let (G, _cost, _u, _v, _result_code) = super::emd_c(&mut a, &mut b, &mut M, 10000);
 
-        println!("{:?}", G);
+        let truth = DMatrix::<f64>::from_row_slice(2, 2,
+                                &[0.5, 0.0,
+                                0.0, 0.5]);
+
+        // println!("{:?}", G);
+
+        assert_eq!(G, truth);
 
     }
 
@@ -345,7 +346,13 @@ mod tests {
 
         let gamma = super::emd(&mut a, &mut b, &mut M, 100000, true);
 
-        println!("{:?}", gamma);
+        let truth = DMatrix::<f64>::from_row_slice(2, 2,
+                                &[0.5, 0.0,
+                                0.0, 0.5]);
+
+        // println!("{:?}", gamma);
+
+        assert_eq!(gamma, truth);
 
     }
 

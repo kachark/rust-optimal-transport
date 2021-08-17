@@ -18,7 +18,7 @@ The library has been tested on MacOSX. It requires a C++ compiler for building/i
 - nalgebra 0.29.0
 
 #### Cargo installation
-Edit your Cargo.toml with the following to add ROT as a dependency (uses git url pending repository publishing on Cargo)
+Edit your Cargo.toml with the following to add ROT as a dependency for your project (uses git url pending publishing on Cargo)
 NOTE: Update to the latest commit with ```cargo update```.
 
 ```toml
@@ -60,7 +60,7 @@ let T = emd(&mut a, &mut b, &mut M) // exact linear program
 
 ## Acknowledgements
 
-This library is inspired by Python Optimal Transport. The original authors and contributors are:
+This library is inspired by Python Optimal Transport. The original authors and contributors of that project are:
 
 * [Rémi Flamary](http://remi.flamary.com/)
 * [Nicolas Courty](http://people.irisa.fr/Nicolas.Courty/)

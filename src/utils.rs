@@ -114,7 +114,9 @@ mod tests {
         let y = DMatrix::from_row_slice(3, 5, vec![5.0; 15].as_slice());
         // let y = DMatrix::from_element(3, 5, 5.0);
 
-        println!("euclidean_distances: {:?}", super::euclidean_distances(&x, &y, false));
+        let distance = super::euclidean_distances(&x, &y, false);
+
+        // println!("euclidean_distances: {:?}", distance);
 
         // squared = true
         // let truth = DMatrix::from_row_slice(3,3,
@@ -123,26 +125,33 @@ mod tests {
         //             125.0, 125.0, 125.0]);
 
         // squared = false
-        let _truth = DMatrix::from_row_slice(3,3,
+        let truth = DMatrix::from_row_slice(3,3,
                     &[11.180339887498949, 11.180339887498949, 11.180339887498949,
                     11.180339887498949, 11.180339887498949, 11.180339887498949,
                     11.180339887498949, 11.180339887498949, 11.180339887498949]);
 
+        assert_eq!(distance, truth);
+
     }
 
     #[test]
+    #[allow(non_snake_case)]
     fn test_dist() {
 
         let x = DMatrix::<f64>::zeros(3,5);
         let y = DMatrix::from_row_slice(3, 5, vec![5.0; 15].as_slice());
 
-        println!("dist: {:?}", super::dist(&x, Some(&y), super::MetricType::Euclidean));
+        let M = super::dist(&x, Some(&y), super::MetricType::Euclidean);
+
+        // println!("dist: {:?}", M);
 
         // squared = false
-        let _truth = DMatrix::from_row_slice(3,3,
+        let truth = DMatrix::from_row_slice(3,3,
                     &[11.180339887498949, 11.180339887498949, 11.180339887498949,
                     11.180339887498949, 11.180339887498949, 11.180339887498949,
                     11.180339887498949, 11.180339887498949, 11.180339887498949]);
+
+        assert_eq!(M, truth);
 
     }
 
