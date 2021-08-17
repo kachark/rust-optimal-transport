@@ -133,15 +133,16 @@ mod tests {
     #[test]
     fn test_dist() {
 
-        let x = DMatrix::<f64>::zeros(3,3);
-        let y = DMatrix::from_element(3, 3, 5.0);
+        let x = DMatrix::<f64>::zeros(3,5);
+        let y = DMatrix::from_row_slice(3, 5, vec![5.0; 15].as_slice());
 
-        println!("dist: {:?}", super::dist(&x, Some(&y), super::MetricType::SqEuclidean));
+        println!("dist: {:?}", super::dist(&x, Some(&y), super::MetricType::Euclidean));
 
+        // squared = false
         let _truth = DMatrix::from_row_slice(3,3,
-                    &[8.660254037844387, 8.660254037844387, 8.660254037844387,
-                    8.660254037844387, 8.660254037844387, 8.660254037844387,
-                    8.660254037844387, 8.660254037844387, 8.660254037844387]);
+                    &[11.180339887498949, 11.180339887498949, 11.180339887498949,
+                    11.180339887498949, 11.180339887498949, 11.180339887498949,
+                    11.180339887498949, 11.180339887498949, 11.180339887498949]);
 
     }
 

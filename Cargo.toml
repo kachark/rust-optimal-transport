@@ -9,7 +9,6 @@ edition = "2018"
 [dependencies]
 cxx = "1.0"
 nalgebra = "0.29.0"
-ordered-float = "2.5.1"
 
 [build-dependencies]
 cxx-build = "1.0"
