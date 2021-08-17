@@ -42,8 +42,8 @@ use ot::utils::metrics::{dist, MetricType};
 * Compute OT matrix
 
 ```rust
-# a, b are weights for source and target densities
-# M is the ground cost matrix
+// a, b are weights for source and target densities
+// M is the ground cost matrix
 
 let mut a = DVector::<f64>::from_vec(vec![1f64 / 5f64; 5]);
 let mut b = DVector::<f64>::from_vec(vec![1f64 / 5f64; 5]);
@@ -55,7 +55,7 @@ let xt = DMatrix::from_row_slice(3, 5, vec![5.0; 15].as_slice());
 // Compute ground cost matrix - Euclidean distance
 let M = dist(&xs, Some(&xt), MetricType::Euclidean);
 
-let T = emd(&mut a, &mut b, &mut M) # exact linear program
+let T = emd(&mut a, &mut b, &mut M) // exact linear program
 ```
 
 ## Acknowledgements
