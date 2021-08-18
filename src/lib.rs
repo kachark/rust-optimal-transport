@@ -22,6 +22,7 @@ use std::error::Error;
 use std::fmt;
 use na::{DVector, DMatrix};
 
+pub mod unbalanced;
 pub mod utils;
 
 #[cxx::bridge]
