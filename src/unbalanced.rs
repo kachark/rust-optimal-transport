@@ -6,13 +6,14 @@ use na::{DVector, DMatrix};
 pub enum UnbalancedSolverType {
     Sinkhorn,
     SinkhornStabilized,
-    SinkhornRegScaling
+    SinkhornRegScaling,
 }
 
 
 /// Solves the unbalanced entropic regularization optimal transport problem and return the OT plan
 /// a: Unnormalized histogram of dimension dim_a
-/// b: One or multiple unnormalized histograms of dimension dim_b
+/// b: One or multiple unnormalized histograms of dimension dim_b. If many, compute all the OT
+/// distances (a, b_i)
 /// M: Loss matrix
 /// reg: Entropy regularization term > 0
 /// reg_m: Marginal relaxation term > 0
@@ -22,31 +23,35 @@ pub enum UnbalancedSolverType {
 /// stop_threshold: Stop threshold on error (>0)
 /// verbose: Print information along iterations
 pub fn sinkhorn_unbalanced(
-    a: &mut DVector<f64>, b: &mut DVector<f64>, M: &mut DMatrix<f64>,
+    a: &mut DVector<f64>, b: &mut DMatrix<f64>, M: &mut DMatrix<f64>,
     reg: f64, reg_m: f64, method: UnbalancedSolverType,
     num_iter_max: Option<i32>, stop_threshold: Option<f64>,
     verbose: Option<bool>) -> DMatrix<f64> {
 
     if b.len() < 2 {
-        b.transpose();
+        *b = b.transpose();
     }
 
     match method {
-        Sinkhorn => sinkhorn_knopp_unbalanced(
+
+        UnbalancedSolverType::Sinkhorn => sinkhorn_knopp_unbalanced(
                                               a, b, M, reg, reg_m,
                                               num_iter_max,
                                               stop_threshold,
                                               verbose),
-        SinkhornStabilized => sinkhorn_stabilized_unbalanced(
+
+        UnbalancedSolverType::SinkhornStabilized => sinkhorn_stabilized_unbalanced(
                                               a, b, M, reg, reg_m,
                                               num_iter_max,
                                               stop_threshold,
                                               verbose),
-        SinkhornRegScaling => sinkhorn_knopp_unbalanced(
+
+        UnbalancedSolverType::SinkhornRegScaling => sinkhorn_knopp_unbalanced(
                                               a, b, M, reg, reg_m,
                                               num_iter_max,
                                               stop_threshold,
                                               verbose),
+
     }
 
 }
@@ -54,7 +59,8 @@ pub fn sinkhorn_unbalanced(
 
 /// Solves the unbalanced entropic regularization optimal transport problem and return the loss
 /// a: Unnormalized histogram of dimension dim_a
-/// b: One or multiple unnormalized histograms of dimension dim_b
+/// b: One or multiple unnormalized histograms of dimension dim_b. If many, compute all the OT
+/// distances (a, b_i)
 /// M: Loss matrix
 /// reg: Entropy regularization term > 0
 /// reg_m: Marginal relaxation term > 0
@@ -62,9 +68,22 @@ pub fn sinkhorn_unbalanced(
 /// stop_threshold: Stop threshold on error (>0)
 /// verbose: Print information along iterations
 fn sinkhorn_knopp_unbalanced(
-    a: &mut DVector<f64>, b: &mut DVector<f64>, M: &mut DMatrix<f64>,
+    a: &mut DVector<f64>, b: &mut DMatrix<f64>, M: &mut DMatrix<f64>,
     reg: f64, reg_m: f64, num_iter_max: Option<i32>, stop_threshold: Option<f64>,
     verbose: Option<bool>) -> DMatrix<f64> {
+
+    let (dim_a, dim_b) = M.shape();
+
+    // if a and b empty, default to uniform distribution
+    if a.len() == 0 {
+        *a = DVector::from_vec(vec![1f64; dim_a]).scale(1f64/dim_a as f64);
+    }
+
+    if b.len() == 0 {
+        // TODO: this may have to be row-major
+        *b = DMatrix::from_vec(1, dim_b, vec![1f64; dim_b]).scale(1f64/dim_b as f64);
+    }
+
 
     DMatrix::<f64>::zeros(2,2)
 
@@ -82,7 +101,7 @@ fn sinkhorn_knopp_unbalanced(
 /// stop_threshold: Stop threshold on error (>0)
 /// verbose: Print information along iterations
 fn sinkhorn_stabilized_unbalanced(
-    a: &mut DVector<f64>, b: &mut DVector<f64>, M: &mut DMatrix<f64>,
+    a: &mut DVector<f64>, b: &mut DMatrix<f64>, M: &mut DMatrix<f64>,
     reg: f64, reg_m: f64, num_iter_max: Option<i32>, stop_threshold: Option<f64>,
     verbose: Option<bool>) -> DMatrix<f64> {
 
