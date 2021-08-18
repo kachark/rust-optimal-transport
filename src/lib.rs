@@ -254,9 +254,9 @@ pub fn emd(a: &mut DVector<f64>, b: &mut DVector<f64>,
     let mut not_asel = DVector::<i32>::zeros(a.len());
     for (i, val) in a.iter().enumerate() {
         if *val == 0f64 {
-            not_asel[i] = 0;
-        } else {
             not_asel[i] = 1;
+        } else {
+            not_asel[i] = 0;
         }
     }
 
