@@ -110,39 +110,33 @@ fn sinkhorn_knopp_unbalanced(
         stop = val;
     }
 
-    for i in 0..iterations {
+    for _ in 0..iterations {
 
         let uprev = u.clone();
         let vprev = v.clone();
 
         let kv = &k * &v; // good
+        // if i == 0 {
+        //     println!("{:?}", &kv);
+        // }
 
-        if i == 0 {
-            println!("{:?}", &kv);
-        }
-
+        // Update u and v
         // u = (a/kv) ** fi
         for (i, ele_u) in u.iter_mut().enumerate() {
             *ele_u = (a[i] / kv[i]).powf(fi);
-        } // good
-        if i == 0 {
-            println!("{:?}", &u);
         }
+        // if i == 0 {
+        //     println!("{:?}", &u);
+        // }
 
-        let ktu = &k.transpose() * &u; // good
-        if i == 0 {
-            println!("{:?}", &ktu);
-        }
+        let ktu = &k.transpose() * &u;
+
         // v = (b/ktu) ** fi
         for (i, ele_v) in v.iter_mut().enumerate() {
             *ele_v = (b[i] / ktu[i]).powf(fi);
-        } // good
-
-        if i == 0 {
-            println!("{:?}", &v);
         }
 
-        // check for machine precision
+        // Check stop conditions
         let mut ktu_0_flag = false;
         let mut u_nan_flag = false;
         let mut u_inf_flag = false;
@@ -183,8 +177,7 @@ fn sinkhorn_knopp_unbalanced(
             break;
         }
 
-        // let err_u = abs(u-uprev).max() / max(abs(u).max(), abs(uprev).max(), 1.)
-        // let err_v = abs(v-vprev).max() / max(abs(v).max(), abs(vprev).max(), 1.)
+        // check for machine precision
         let err_u = (&u-&uprev).amax() / (dvector![u.amax(), uprev.amax(), 1f64].max());
         let err_v = (&v-&vprev).amax() / (dvector![v.amax(), vprev.amax(), 1f64].max());
         let err = 0.5 * (err_u + err_v);
@@ -192,20 +185,20 @@ fn sinkhorn_knopp_unbalanced(
             break;
         }
 
-
-        // res = np.einsum('ik,ij,jk,ij->k', u, K, v, M);
-        // einsum('ij,ij->i', Y, Y)
-        // let b2 = y.component_mul(y).column_sum();
-
     }
 
-    // let mut result = DMatrix::<f64>::zeros(k.shape().0, k.shape().1);
+    // nhists = 1
     let mut result = k.clone();
     for (i, mut row) in result.row_iter_mut().enumerate() {
         for (j, k) in row.iter_mut().enumerate() {
             *k *= u[i] * v[j];
         }
     }
+
+    // nhists > 1 - Don't handle this case
+    // res = np.einsum('ik,ij,jk,ij->k', u, K, v, M);
+    // einsum('ij,ij->i', Y, Y)
+    // let b2 = y.component_mul(y).column_sum();
 
     result
 
@@ -231,8 +224,6 @@ fn sinkhorn_stabilized_unbalanced(
 
 }
 
-} // mod unbalanced
-
 
 #[cfg(test)]
 mod tests {
@@ -248,9 +239,9 @@ mod tests {
         let reg_m = 3.0;
         let mut m = DMatrix::<f64>::from_row_slice(3, 3, &[0.5, 0.0, 0.0, 0.0, 0.5, 0.0, 0.0, 0.0, 0.5]);
 
-        let result = super::unbalanced::sinkhorn_unbalanced(&mut a, &mut b, &mut m,
-                                                            reg, reg_m, super::unbalanced::UnbalancedSolverType::Sinkhorn,
-                                                            None, None, None);
+        let result = super::sinkhorn_unbalanced(&mut a, &mut b, &mut m,
+                                                reg, reg_m, super::UnbalancedSolverType::Sinkhorn,
+                                                None, None, None);
 
         // println!("{:?}", result);
 
@@ -264,24 +255,30 @@ mod tests {
 
     }
 
-//     #[test]
-//     fn test_sinkhorn_knopp() {
+    #[test]
+    fn test_sinkhorn_knopp() {
 
-//         let mut a = DVector::from_vec(vec![1./3., 1./3., 1./3.]);
-//         let mut b = DMatrix::from_vec(3, 1, vec![1./3., 1./3., 1./3.]);
-//         let mut u = DVector::from_vec(vec![1./3., 1./3., 1./3.]);
-//         let mut v = DVector::from_vec(vec![1./3., 1./3., 1./3.]);
-//         let reg = 2.0;
-//         let reg_m = 3.0;
-//         let mut m = DMatrix::<f64>::from_row_slice(3, 3, &[0.5, 0.0, 0.0, 0.0, 0.5, 0.0, 0.0, 0.0, 0.5]);
+        let mut a = DVector::from_vec(vec![0.5, 0.5]);
+        let mut b = DMatrix::from_vec(2, 1, vec![0.5, 0.5]);
+        let reg = 1.0;
+        let reg_m = 1.0;
+        let mut m = DMatrix::<f64>::from_row_slice(2, 2, &[0.0, 1.0, 1.0, 0.0]);
 
-//         let result = super::sinkhorn_knopp_unbalanced(&mut a, &mut b, &mut m,
-//                                                     reg, reg_m, super::unbalanced::UnbalancedSolverType::Sinkhorn,
-//                                                     None, None, None);
+        let result = super::sinkhorn_knopp_unbalanced(&mut a, &mut b, &mut m,
+                                                    reg, reg_m,
+                                                    None, None, None);
 
-//         println!("{:?}", result);
+        println!("{:?}", result);
 
+        // squared = false
+        let truth = DMatrix::from_row_slice(2,2,
+                    &[0.51122823, 0.18807035,
+                    0.18807035, 0.51122823]);
 
-//     }
+        assert!(result.relative_eq(&truth, 1E-6, 1E-2));
+
+    }
 
 }
+
+} // mod unbalanced
