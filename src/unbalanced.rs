@@ -1,6 +1,4 @@
 
-pub mod unbalanced {
-
 use na::{DVector, dvector, DMatrix};
 
 pub enum UnbalancedSolverType {
@@ -280,5 +278,3 @@ mod tests {
     }
 
 }
-
-} // mod unbalanced
