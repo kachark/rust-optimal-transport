@@ -26,6 +26,19 @@ pub fn sinkhorn_unbalanced(
     num_iter_max: Option<i32>, stop_threshold: Option<f64>,
     verbose: Option<bool>) -> DMatrix<f64> {
 
+    // defaults
+    let mut iterations = 1000;
+    if let Some(val) = num_iter_max {
+        iterations = val;
+    }
+
+    let mut stop = 1E-6;
+    if let Some(val) = stop_threshold {
+        stop = val;
+    }
+
+
+
     if b.len() < 2 {
         *b = b.transpose();
     }
@@ -231,31 +244,6 @@ mod tests {
     #[test]
     fn test_sinkhorn_unbalanced() {
 
-        let mut a = DVector::from_vec(vec![1./3., 1./3., 1./3.]);
-        let mut b = DMatrix::from_vec(3, 1, vec![1./3., 1./3., 1./3.]);
-        let reg = 2.0;
-        let reg_m = 3.0;
-        let mut m = DMatrix::<f64>::from_row_slice(3, 3, &[0.5, 0.0, 0.0, 0.0, 0.5, 0.0, 0.0, 0.0, 0.5]);
-
-        let result = super::sinkhorn_unbalanced(&mut a, &mut b, &mut m,
-                                                reg, reg_m, super::UnbalancedSolverType::Sinkhorn,
-                                                None, None, None);
-
-        // println!("{:?}", result);
-
-        // squared = false
-        let truth = DMatrix::from_row_slice(3,3,
-                    &[0.15874225, 0.20382908, 0.20382908,
-                    0.20382908, 0.15874225, 0.20382908,
-                    0.20382908, 0.20382908, 0.15874225]);
-
-        assert!(result.relative_eq(&truth, 1E-6, 1E-2));
-
-    }
-
-    #[test]
-    fn test_sinkhorn_knopp() {
-
         let mut a = DVector::from_vec(vec![0.5, 0.5]);
         let mut b = DMatrix::from_vec(2, 1, vec![0.5, 0.5]);
         let reg = 1.0;
@@ -266,14 +254,41 @@ mod tests {
                                                     reg, reg_m,
                                                     None, None, None);
 
-        println!("{:?}", result);
+        // println!("{:?}", result);
 
-        // squared = false
         let truth = DMatrix::from_row_slice(2,2,
                     &[0.51122823, 0.18807035,
                     0.18807035, 0.51122823]);
 
         assert!(result.relative_eq(&truth, 1E-6, 1E-2));
+
+    }
+
+    #[test]
+    fn test_sinkhorn_knopp() {
+
+        let mut a = DVector::from_vec(vec![1./3., 1./3., 1./3.]);
+        let mut b = DMatrix::from_vec(4, 1, vec![1./4., 1./4., 1./4., 1./4.]);
+        let reg = 2.0;
+        let reg_m = 3.0;
+        let mut m = DMatrix::<f64>::from_row_slice(3, 4,
+                    &[0.5, 0.0, 0.0, 0.0,
+                    0.0, 0.5, 0.0, 0.0,
+                    0.0, 0.0, 0.5, 0.0]);
+
+        let result = super::sinkhorn_knopp_unbalanced(&mut a, &mut b, &mut m,
+                                                reg, reg_m,
+                                                None, None, None);
+
+        // println!("{:?}", result);
+
+        let truth = DMatrix::from_row_slice(3,4, 
+                    &[0.1275636 , 0.1637949 , 0.1637949 , 0.15643794,
+                    0.1637949 , 0.1275636 , 0.1637949 , 0.15643794,
+                    0.1637949 , 0.1637949 , 0.1275636 , 0.15643794]);
+
+        assert!(result.relative_eq(&truth, 1E-6, 1E-2));
+
 
     }
 
