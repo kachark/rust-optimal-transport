@@ -10,8 +10,7 @@ pub enum UnbalancedSolverType {
 
 /// Solves the unbalanced entropic regularization optimal transport problem and return the OT plan
 /// a: Unnormalized histogram of dimension dim_a
-/// b: One or multiple unnormalized histograms of dimension dim_b. If many, compute all the OT
-/// distances (a, b_i)
+/// b: Unnormalized histogram of dimension dim_b
 /// M: Loss matrix
 /// reg: Entropy regularization term > 0
 /// reg_m: Marginal relaxation term > 0
@@ -26,19 +25,6 @@ pub fn sinkhorn_unbalanced(
     num_iter_max: Option<i32>, stop_threshold: Option<f64>,
     verbose: Option<bool>) -> DMatrix<f64> {
 
-    // defaults
-    let mut iterations = 1000;
-    if let Some(val) = num_iter_max {
-        iterations = val;
-    }
-
-    let mut stop = 1E-6;
-    if let Some(val) = stop_threshold {
-        stop = val;
-    }
-
-
-
     if b.len() < 2 {
         *b = b.transpose();
     }
@@ -51,7 +37,8 @@ pub fn sinkhorn_unbalanced(
                                               stop_threshold,
                                               verbose),
 
-        UnbalancedSolverType::SinkhornStabilized => sinkhorn_stabilized_unbalanced(
+        // TODO: implement log stabilized and scaling versions
+        UnbalancedSolverType::SinkhornStabilized => sinkhorn_knopp_unbalanced(
                                               a, b, M, reg, reg_m,
                                               num_iter_max,
                                               stop_threshold,
@@ -70,8 +57,7 @@ pub fn sinkhorn_unbalanced(
 
 /// Solves the unbalanced entropic regularization optimal transport problem and return the loss
 /// a: Unnormalized histogram of dimension dim_a
-/// b: One or multiple unnormalized histograms of dimension dim_b. If many, compute all the OT
-/// distances (a, b_i)
+/// b: Unnormalized histogram of dimension dim_b
 /// M: Loss matrix
 /// reg: Entropy regularization term > 0
 /// reg_m: Marginal relaxation term > 0
@@ -82,6 +68,22 @@ fn sinkhorn_knopp_unbalanced(
     a: &mut DVector<f64>, b: &mut DMatrix<f64>, M: &mut DMatrix<f64>,
     reg: f64, reg_m: f64, num_iter_max: Option<i32>, stop_threshold: Option<f64>,
     verbose: Option<bool>) -> DMatrix<f64> {
+
+    // Defaults
+    let mut iterations = 1000;
+    if let Some(val) = num_iter_max {
+        iterations = val;
+    }
+
+    let mut stop = 1E-6;
+    if let Some(val) = stop_threshold {
+        stop = val;
+    }
+
+    let mut _verbose_mode = false;
+    if let Some(val) = verbose {
+        _verbose_mode = val;
+    }
 
     let (dim_a, dim_b) = M.shape();
 
@@ -108,41 +110,21 @@ fn sinkhorn_knopp_unbalanced(
     }
 
     let fi = reg_m / (reg_m + reg);
-    let err = 1f64;
-
-
-    let mut iterations = 100000;
-    if let Some(val) = num_iter_max {
-        iterations = val;
-    }
-
-    let mut stop = 1E-6;
-    if let Some(val) = stop_threshold {
-        stop = val;
-    }
 
     for _ in 0..iterations {
 
         let uprev = u.clone();
         let vprev = v.clone();
 
-        let kv = &k * &v; // good
-        // if i == 0 {
-        //     println!("{:?}", &kv);
-        // }
-
         // Update u and v
         // u = (a/kv) ** fi
+        let kv = &k * &v;
         for (i, ele_u) in u.iter_mut().enumerate() {
             *ele_u = (a[i] / kv[i]).powf(fi);
         }
-        // if i == 0 {
-        //     println!("{:?}", &u);
-        // }
-
-        let ktu = &k.transpose() * &u;
 
         // v = (b/ktu) ** fi
+        let ktu = &k.transpose() * &u;
         for (i, ele_v) in v.iter_mut().enumerate() {
             *ele_v = (b[i] / ktu[i]).powf(fi);
         }
@@ -198,40 +180,15 @@ fn sinkhorn_knopp_unbalanced(
 
     }
 
-    // nhists = 1
-    let mut result = k.clone();
-    for (i, mut row) in result.row_iter_mut().enumerate() {
+    // nhists = 1 case only
+    // diag(u)*K*diag(v)
+    for (i, mut row) in k.row_iter_mut().enumerate() {
         for (j, k) in row.iter_mut().enumerate() {
             *k *= u[i] * v[j];
         }
     }
 
-    // nhists > 1 - Don't handle this case
-    // res = np.einsum('ik,ij,jk,ij->k', u, K, v, M);
-    // einsum('ij,ij->i', Y, Y)
-    // let b2 = y.component_mul(y).column_sum();
-
-    result
-
-}
-
-
-/// Solves the unbalanced entropic regularization optimal transport problem and return the loss
-/// This function solves the optimization problem using log-domain stabilization
-/// a: Unnormalized histogram of dimension dim_a
-/// b: One or multiple unnormalized histograms of dimension dim_b
-/// M: Loss matrix
-/// reg: Entropy regularization term > 0
-/// reg_m: Marginal relaxation term > 0
-/// num_iter_max: Max number of iterations
-/// stop_threshold: Stop threshold on error (>0)
-/// verbose: Print information along iterations
-fn sinkhorn_stabilized_unbalanced(
-    a: &mut DVector<f64>, b: &mut DMatrix<f64>, M: &mut DMatrix<f64>,
-    reg: f64, reg_m: f64, num_iter_max: Option<i32>, stop_threshold: Option<f64>,
-    verbose: Option<bool>) -> DMatrix<f64> {
-
-    DMatrix::<f64>::zeros(2,2)
+    k
 
 }
 
@@ -253,8 +210,6 @@ mod tests {
         let result = super::sinkhorn_knopp_unbalanced(&mut a, &mut b, &mut m,
                                                     reg, reg_m,
                                                     None, None, None);
-
-        // println!("{:?}", result);
 
         let truth = DMatrix::from_row_slice(2,2,
                     &[0.51122823, 0.18807035,
@@ -288,7 +243,6 @@ mod tests {
                     0.1637949 , 0.1637949 , 0.1275636 , 0.15643794]);
 
         assert!(result.relative_eq(&truth, 1E-6, 1E-2));
-
 
     }
 
