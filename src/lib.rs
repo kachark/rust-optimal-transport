@@ -17,11 +17,14 @@
 
 
 extern crate nalgebra as na;
+extern crate plotters;
 
 use std::error::Error;
 use std::fmt;
 use na::{DVector, DMatrix};
 
+// pub mod plot;
+pub mod bregman;
 pub mod unbalanced;
 pub mod utils;
 
@@ -244,7 +247,7 @@ pub fn emd(a: &mut DVector<f64>, b: &mut DVector<f64>,
     assert_eq!(b.len(), m1, "Dimension mismatch check dimensions of M with b");
 
     // Ensure the same mass
-    assert_eq!(a.sum(), b.sum(), "a and b vector must have the same sum");
+    assert_eq!(a.sum() as f32, b.sum() as f32, "a and b vector must have the same sum");
 
     // b = b * a.sum/b.sum
     b.scale_mut(a.sum()/b.sum());
