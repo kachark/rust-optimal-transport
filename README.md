@@ -4,7 +4,7 @@ This library provides solvers for performing regularized and unregularized Optim
 
 Heavily inspired by [Python Optimal Transport](https://pythonot.github.io), this library provides the following solvers: 
 - [Network simplex](https://github.com/nbonneel/network_simplex) algorithm for linear program / Earth Movers Distance
-- Sinkhorn Knopp
+- Entropic regularization OT solvers including Sinkhorn Knopp and Greedy Sinkhorn
 - Unbalanced Sinkhorn Knopp
 
 ## Installation
