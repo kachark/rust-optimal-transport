@@ -3,13 +3,13 @@
 This library provides solvers for performing regularized and unregularized Optimal Transport in Rust.
 
 Heavily inspired by [Python Optimal Transport](https://pythonot.github.io), this library provides the following solvers: 
-- Earth Movers Distance using [Network simplex](https://github.com/nbonneel/network_simplex)
+- [Network simplex](https://github.com/nbonneel/network_simplex) algorithm for linear program / Earth Movers Distance
 - Sinkhorn Knopp
 - Unbalanced Sinkhorn Knopp
 
 ## Installation
 
-The library has been tested on MacOSX. It requires a C++ compiler for building/installing the EMD solver and relies on the following Rust libraries:
+The library has been tested on macOS. It requires a C++ compiler for building the EMD solver and relies on the following Rust libraries:
 
 - cxx 1.0
 - nalgebra 0.29.0
