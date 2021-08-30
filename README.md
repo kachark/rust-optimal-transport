@@ -20,7 +20,7 @@ NOTE: Update to the latest commit with ```cargo update```.
 
 ```toml
 [dependencies]
-rust-optimal-transport = { git = "https://github.com/kachark/rust-optimal-transport", branch = "master" }
+rust-optimal-transport = { git = "https://github.com/kachark/rust-optimal-transport", branch = "main" }
 ```
 
 ## Examples
@@ -30,10 +30,10 @@ rust-optimal-transport = { git = "https://github.com/kachark/rust-optimal-transp
 * Import the library
 
 ```rust
-extern crate rust_optimal_transport as ot;
+extern crate rust_optimal_transport as rot;
 
-use ot::emd;
-use ot::utils::metrics::{dist, MetricType};
+use rot::ot::emd::emd;
+use rot::utils::metrics::{dist, MetricType};
 ```
 
 * Compute OT matrix
