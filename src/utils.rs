@@ -12,16 +12,9 @@ pub enum MetricType {
 
 /// Compute distance between samples in x1 and x2
 /// x1: matrix with n1 samples of size d
-/// x2: matrix with n2 samples of size d (if None then x2=x1)
+/// x2: matrix with n2 samples of size d
 /// metric: choice of distance metric
-pub fn dist(x1: &DMatrix<f64>, x2: Option<&DMatrix<f64>>, metric: MetricType) -> DMatrix<f64> {
-
-    let x2 = match x2 {
-
-        Some(matrix) => matrix,
-        None => x1
-
-    };
+pub fn dist(x1: &DMatrix<f64>, x2: &DMatrix<f64>, metric: MetricType) -> DMatrix<f64> {
 
     match metric {
 
@@ -134,7 +127,7 @@ mod tests {
         let x = DMatrix::<f64>::zeros(3,5);
         let y = DMatrix::from_row_slice(3, 5, vec![5.0; 15].as_slice());
 
-        let M = super::dist(&x, Some(&y), super::MetricType::Euclidean);
+        let M = super::dist(&x, &y, super::MetricType::Euclidean);
 
         // println!("dist: {:?}", M);
 
