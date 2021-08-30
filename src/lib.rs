@@ -24,6 +24,7 @@ use std::fmt;
 pub mod ot;
 pub mod regularized;
 pub mod unbalanced;
+pub mod utils;
 
 #[cxx::bridge]
 mod ffi {

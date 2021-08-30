@@ -10,7 +10,7 @@ use na::{DVector, dvector, DMatrix};
 /// num_iter_max: Max number of iterations
 /// stop_threshold: Stop threshold on error (>0)
 /// verbose: Print information along iterations
-fn sinkhorn_knopp(
+pub fn sinkhorn_knopp(
     a: &mut DVector<f64>, b: &mut DMatrix<f64>, M: &mut DMatrix<f64>,
     reg: f64, num_iter_max: Option<i32>, stop_threshold: Option<f64>,
     verbose: Option<bool>) -> DMatrix<f64> {
