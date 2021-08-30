@@ -11,7 +11,7 @@ use na::{DVector, dvector, DMatrix};
 /// stop_threshold: Stop threshold on error (>0)
 /// verbose: Print information along iterations
 pub fn sinkhorn_knopp_unbalanced(
-    a: &mut DVector<f64>, b: &mut DMatrix<f64>, M: &mut DMatrix<f64>,
+    a: &mut DVector<f64>, b: &mut DVector<f64>, M: &mut DMatrix<f64>,
     reg: f64, reg_m: f64, num_iter_max: Option<i32>, stop_threshold: Option<f64>,
     verbose: Option<bool>) -> DMatrix<f64> {
 
@@ -39,15 +39,12 @@ pub fn sinkhorn_knopp_unbalanced(
     }
 
     if b.len() == 0 {
-        // ensure row-major
-        *b = DMatrix::from_row_slice(1, dim_b, vec![1f64 / (dim_b as f64); dim_b].as_slice());
+        *b = DVector::from_vec(vec![1f64 / (dim_b as f64); dim_b]);
     }
-
-    let n_hists = b.shape().1;
 
     // we assume that no distances are null except those of the diagonal distances
     let mut u = DVector::<f64>::from_vec(vec![1f64 / (dim_a as f64); dim_a]);
-    let mut v = DMatrix::<f64>::from_row_slice(dim_b, n_hists, vec![1f64 / (dim_b as f64); dim_b].as_slice());
+    let mut v = DVector::<f64>::from_vec(vec![1f64 / (dim_b as f64); dim_b]);
 
     // K = exp(-M/reg)
     let mut k = M.clone();
@@ -148,7 +145,7 @@ mod tests {
     fn test_sinkhorn_knopp_unbalanced() {
 
         let mut a = DVector::from_vec(vec![1./3., 1./3., 1./3.]);
-        let mut b = DMatrix::from_vec(4, 1, vec![1./4., 1./4., 1./4., 1./4.]);
+        let mut b = DVector::from_vec(vec![1./4., 1./4., 1./4., 1./4.]);
         let reg = 2.0;
         let reg_m = 3.0;
         let mut m = DMatrix::<f64>::from_row_slice(3, 4,
@@ -159,8 +156,6 @@ mod tests {
         let result = super::sinkhorn_knopp_unbalanced(&mut a, &mut b, &mut m,
                                                 reg, reg_m,
                                                 None, None, None);
-
-        // println!("{:?}", result);
 
         let truth = DMatrix::from_row_slice(3,4, 
                     &[0.1275636 , 0.1637949 , 0.1637949 , 0.15643794,

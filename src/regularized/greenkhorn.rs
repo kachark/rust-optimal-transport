@@ -1,8 +1,9 @@
 
 use na::{DVector, DMatrix};
 
+// TODO: docstring
 pub fn greenkhorn(
-    a: &mut DVector<f64>, b: &mut DMatrix<f64>, M: &mut DMatrix<f64>,
+    a: &mut DVector<f64>, b: &mut DVector<f64>, M: &mut DMatrix<f64>,
     reg: f64, num_iter_max: Option<i32>, stop_threshold: Option<f64>,
     verbose: Option<bool>) -> DMatrix<f64> {
 
@@ -30,13 +31,11 @@ pub fn greenkhorn(
     }
 
     if b.len() == 0 {
-        // ensure row-major
-        *b = DMatrix::from_row_slice(1, dim_b, vec![1f64 / (dim_b as f64); dim_b].as_slice());
+        *b = DVector::from_vec(vec![1f64 / (dim_b as f64); dim_b]);
     }
 
-    let n_hists = b.shape().1;
     let mut u = DVector::<f64>::from_vec(vec![1f64 / (dim_a as f64); dim_a]);
-    let mut v = DMatrix::<f64>::from_row_slice(dim_b, n_hists, vec![1f64 / (dim_b as f64); dim_b].as_slice());
+    let mut v = DVector::<f64>::from_vec(vec![1f64 / (dim_b as f64); dim_b]);
 
     // K = exp(-M/reg)
     let mut k = M.clone();
@@ -156,7 +155,7 @@ mod tests {
     fn test_greenkhorn() {
 
         let mut a = DVector::from_vec(vec![0.5, 0.5]);
-        let mut b = DMatrix::from_vec(2, 1, vec![0.5, 0.5]);
+        let mut b = DVector::from_vec(vec![0.5, 0.5]);
         let reg = 1.0;
         let mut m = DMatrix::<f64>::from_row_slice(2, 2, &[0.0, 1.0, 1.0, 0.0]);
 
