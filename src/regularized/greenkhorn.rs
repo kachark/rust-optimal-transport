@@ -4,8 +4,7 @@ use na::{DVector, DMatrix};
 // TODO: docstring
 pub fn greenkhorn(
     a: &mut DVector<f64>, b: &mut DVector<f64>, M: &mut DMatrix<f64>,
-    reg: f64, num_iter_max: Option<i32>, stop_threshold: Option<f64>,
-    verbose: Option<bool>) -> DMatrix<f64> {
+    reg: f64, num_iter_max: Option<i32>, stop_threshold: Option<f64>) -> DMatrix<f64> {
 
     // Defaults
     let mut iterations = 1000;
@@ -16,11 +15,6 @@ pub fn greenkhorn(
     let mut stop = 1E-6;
     if let Some(val) = stop_threshold {
         stop = val;
-    }
-
-    let mut _verbose_mode = false;
-    if let Some(val) = verbose {
-        _verbose_mode = val;
     }
 
     let (dim_a, dim_b) = M.shape();
@@ -160,7 +154,7 @@ mod tests {
         let mut m = DMatrix::<f64>::from_row_slice(2, 2, &[0.0, 1.0, 1.0, 0.0]);
 
         let result = super::greenkhorn(&mut a, &mut b, &mut m,
-                                            reg, None, None, None);
+                                            reg, None, None);
 
         println!("{:?}", result);
 

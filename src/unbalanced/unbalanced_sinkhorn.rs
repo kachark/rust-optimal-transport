@@ -9,11 +9,9 @@ use na::{DVector, dvector, DMatrix};
 /// reg_m: Marginal relaxation term > 0
 /// num_iter_max: Max number of iterations
 /// stop_threshold: Stop threshold on error (>0)
-/// verbose: Print information along iterations
 pub fn sinkhorn_knopp_unbalanced(
     a: &mut DVector<f64>, b: &mut DVector<f64>, M: &mut DMatrix<f64>,
-    reg: f64, reg_m: f64, num_iter_max: Option<i32>, stop_threshold: Option<f64>,
-    verbose: Option<bool>) -> DMatrix<f64> {
+    reg: f64, reg_m: f64, num_iter_max: Option<i32>, stop_threshold: Option<f64>) -> DMatrix<f64> {
 
     // Defaults
     let mut iterations = 1000;
@@ -24,11 +22,6 @@ pub fn sinkhorn_knopp_unbalanced(
     let mut stop = 1E-6;
     if let Some(val) = stop_threshold {
         stop = val;
-    }
-
-    let mut _verbose_mode = false;
-    if let Some(val) = verbose {
-        _verbose_mode = val;
     }
 
     let (dim_a, dim_b) = M.shape();
@@ -154,8 +147,7 @@ mod tests {
                     0.0, 0.0, 0.5, 0.0]);
 
         let result = super::sinkhorn_knopp_unbalanced(&mut a, &mut b, &mut m,
-                                                reg, reg_m,
-                                                None, None, None);
+                                                    reg, reg_m, None, None);
 
         let truth = DMatrix::from_row_slice(3,4, 
                     &[0.1275636 , 0.1637949 , 0.1637949 , 0.15643794,
