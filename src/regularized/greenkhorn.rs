@@ -1,7 +1,17 @@
 
 use na::{DVector, DMatrix};
 
-// TODO: docstring
+/// Solves the entropic regularization optimal transport problem and return the OT matrix
+/// Uses the Greedy Sinkhorn method:
+/// Near-linear time approximation algorithms for optimal transport via Sinkhorn iteration
+/// by Jason Altschuler, Jonathan Weed, Philippe Rigollet
+///
+/// a: Unnormalized histogram of dimension dim_a
+/// b: Unnormalized histogram of dimension dim_b
+/// M: Loss matrix
+/// reg: Entropy regularization term > 0
+/// num_iter_max: Max number of iterations
+/// stop_threshold: Stop threshold on error (> 0)
 pub fn greenkhorn(
     a: &mut DVector<f64>, b: &mut DVector<f64>, M: &mut DMatrix<f64>,
     reg: f64, num_iter_max: Option<i32>, stop_threshold: Option<f64>) -> DMatrix<f64> {

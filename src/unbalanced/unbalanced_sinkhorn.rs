@@ -1,14 +1,15 @@
 
 use na::{DVector, dvector, DMatrix};
 
-/// Solves the unbalanced entropic regularization optimal transport problem and return the loss
+/// Solves the unbalanced entropic regularization optimal transport problem and return the OT
+/// matrix
 /// a: Unnormalized histogram of dimension dim_a
 /// b: Unnormalized histogram of dimension dim_b
 /// M: Loss matrix
 /// reg: Entropy regularization term > 0
 /// reg_m: Marginal relaxation term > 0
 /// num_iter_max: Max number of iterations
-/// stop_threshold: Stop threshold on error (>0)
+/// stop_threshold: Stop threshold on error (> 0)
 pub fn sinkhorn_knopp_unbalanced(
     a: &mut DVector<f64>, b: &mut DVector<f64>, M: &mut DMatrix<f64>,
     reg: f64, reg_m: f64, num_iter_max: Option<i32>, stop_threshold: Option<f64>) -> DMatrix<f64> {
