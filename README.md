@@ -52,7 +52,7 @@ let xt = DMatrix::from_row_slice(3, 5, vec![5.0; 15].as_slice());
 // Compute ground cost matrix - Euclidean distance
 let mut M = dist(&xs, &xt, MetricType::Euclidean);
 
-let T = emd(&mut a, &mut b, &mut M) // exact linear program
+let T = emd(&mut a, &mut b, &mut M, None, None) // exact linear program
 ```
 
 ## Acknowledgements

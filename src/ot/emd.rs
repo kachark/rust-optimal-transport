@@ -1,8 +1,123 @@
 
+use std::error::Error;
+use std::fmt;
 use na::{DVector, DMatrix};
 
-use crate::{ProblemType, ProblemError};
+enum EMDStatus {
+    Infeasible=0,
+    Optimal=1,
+    Unbounded=2,
+    MaxIterReached=3
+}
 
+#[derive(Debug)]
+struct EMDError {
+    details: String
+}
+
+impl fmt::Display for EMDError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.details)
+    }
+}
+
+impl Error for EMDError {
+    fn description(&self) -> &str {
+        &self.details
+    }
+}
+
+
+
+/// Solves the Earth Movers distance problem and returns the OT matrix
+/// a: Source histogram (uniform weight if empty)
+/// b: Target histogram (uniform weight if empty)
+/// M: Loss matrix (row-major)
+/// num_iter_max: maximum number of iterations before stopping the optimization algorithm if it has
+/// not converged
+/// center_dual: If True, centers the dual potential using function
+#[allow(non_snake_case)]
+pub fn emd(a: &mut DVector<f64>, b: &mut DVector<f64>,
+       M: &mut DMatrix<f64>, num_iter_max: Option<i32>,
+       center_dual: Option<bool>) -> DMatrix<f64> {
+
+    // Defaults
+    let mut iterations = 100000;
+    if let Some(val) = num_iter_max {
+        iterations = val;
+    }
+
+    let mut center = true;
+    if let Some(val) = center_dual {
+        center = val;
+    }
+
+    let (m0, m1) = M.shape();
+
+    // if a and b empty, default to uniform distribution
+    if a.len() == 0 {
+        *a = DVector::from_vec(vec![1f64; m0]).scale(1f64/m0 as f64);
+    }
+
+    if b.len() == 0 {
+        *b = DVector::from_vec(vec![1f64; m1]).scale(1f64/m1 as f64);
+    }
+
+    // TODO: add error handling
+    // Check dimensions
+    assert_eq!(a.len(), m0, "Dimension mismatch check dimensions of M with a");
+    assert_eq!(b.len(), m1, "Dimension mismatch check dimensions of M with b");
+
+    // Ensure the same mass
+    assert_eq!(a.sum(), b.sum(), "a and b vector must have the same sum");
+
+    // b = b * a.sum/b.sum
+    b.scale_mut(a.sum()/b.sum());
+
+    // not_asel == ~asel, not_bsel == ~bsel
+    // binary indexing of non-zero weights
+    let mut not_asel = DVector::<i32>::zeros(a.len());
+    for (i, val) in a.iter().enumerate() {
+        if *val == 0f64 {
+            not_asel[i] = 1;
+        } else {
+            not_asel[i] = 0;
+        }
+    }
+
+    let mut not_bsel = DVector::<i32>::zeros(b.len());
+    for (i, val) in b.iter().enumerate() {
+        if *val == 0f64 {
+            not_bsel[i] = 1;
+        } else {
+            not_bsel[i] = 0;
+        }
+    }
+
+    let (G, _cost, mut u, mut v, result_code) = emd_c(a, b, M, iterations);
+
+    if center {
+        let result = center_ot_dual(&u, &v, Some(a), Some(b));
+        u = result.0;
+        v = result.1;
+    }
+
+    if not_asel.sum() > 1 || not_bsel.sum() > 1 {
+        let result = estimate_dual_null_weights(&u, &v, a, b, M);
+        u = result.0;
+        v = result.1;
+    }
+
+    // TODO: DO NOT PANIC
+    match check_result(result_code) {
+        Err(error) => panic!("{:?}", error),
+        Ok(_) => G
+    }
+
+}
+
+
+/// Wrapper of C++ FastTransport OT Network Simplex solver
 #[allow(non_snake_case)]
 fn emd_c(a: &mut DVector<f64>, b: &mut DVector<f64>, M: &mut DMatrix<f64>, max_iter: i32)
     -> (DMatrix<f64>, f64, DVector<f64>, DVector<f64>, i32) {
@@ -157,93 +272,19 @@ fn estimate_dual_null_weights(
 
 }
 
-/// Solves the Earth Movers distance problem and returns the OT matrix
-/// a: Source histogram (uniform weight if empty)
-/// b: Target histogram (uniform weight if empty)
-/// M: Loss matrix (row-major)
-/// num_iter_max: maximum number of iterations before stopping the optimization algorithm if it has
-/// not converged
-/// center_dual: If True, centers the dual potential using function
-#[allow(non_snake_case)]
-pub fn emd(a: &mut DVector<f64>, b: &mut DVector<f64>,
-       M: &mut DMatrix<f64>, num_iter_max: i32,
-       center_dual: bool) -> DMatrix<f64> {
+/// Convert FastTransport error codes to EMDErrors
+fn check_result(result_code: i32) -> Result<(), EMDError> {
 
-    let (m0, m1) = M.shape();
-
-    // if a and b empty, default to uniform distribution
-    if a.len() == 0 {
-        *a = DVector::from_vec(vec![1f64; m0]).scale(1f64/m0 as f64);
-    }
-
-    if b.len() == 0 {
-        *b = DVector::from_vec(vec![1f64; m1]).scale(1f64/m1 as f64);
-    }
-
-    // Check dimensions
-    assert_eq!(a.len(), m0, "Dimension mismatch check dimensions of M with a");
-    assert_eq!(b.len(), m1, "Dimension mismatch check dimensions of M with b");
-
-    // Ensure the same mass
-    assert_eq!(a.sum() as f32, b.sum() as f32, "a and b vector must have the same sum");
-
-    // b = b * a.sum/b.sum
-    b.scale_mut(a.sum()/b.sum());
-
-    // not_asel == ~asel, not_bsel == ~bsel
-    // binary indexing of non-zero weights
-    let mut not_asel = DVector::<i32>::zeros(a.len());
-    for (i, val) in a.iter().enumerate() {
-        if *val == 0f64 {
-            not_asel[i] = 1;
-        } else {
-            not_asel[i] = 0;
-        }
-    }
-
-    let mut not_bsel = DVector::<i32>::zeros(b.len());
-    for (i, val) in b.iter().enumerate() {
-        if *val == 0f64 {
-            not_bsel[i] = 1;
-        } else {
-            not_bsel[i] = 0;
-        }
-    }
-
-    let (G, _cost, mut u, mut v, result_code) = emd_c(a, b, M, num_iter_max);
-
-    if center_dual {
-        let result = center_ot_dual(&u, &v, Some(a), Some(b));
-        u = result.0;
-        v = result.1;
-    }
-
-    if not_asel.sum() > 1 || not_bsel.sum() > 1 {
-        let result = estimate_dual_null_weights(&u, &v, a, b, M);
-        u = result.0;
-        v = result.1;
-    }
-
-    match check_result(result_code) {
-        Err(error) => panic!("{:?}", error),
-        Ok(_) => G
-    }
-
-}
-
-
-fn check_result(result_code: i32) -> Result<(), ProblemError> {
-
-    if result_code == ProblemType::Optimal as i32 {
+    if result_code == EMDStatus::Optimal as i32 {
         Ok(())
-    } else if result_code == ProblemType::Unbounded as i32 {
-        Err( ProblemError{details: String::from("Problem unbounded")} )
-    } else if result_code == ProblemType::MaxIterReached as i32 {
-        Err( ProblemError{details: String::from("numItermax reached before optimality. Try to increase numItermax")} )
-    } else if result_code == ProblemType::Infeasible as i32 {
-        Err( ProblemError{details: String::from("Problem infeasible. Check that a and b are in the simplex")} )
+    } else if result_code == EMDStatus::Unbounded as i32 {
+        Err( EMDError{details: String::from("Problem unbounded")} )
+    } else if result_code == EMDStatus::MaxIterReached as i32 {
+        Err( EMDError{details: String::from("numItermax reached before optimality. Try to increase numItermax")} )
+    } else if result_code == EMDStatus::Infeasible as i32 {
+        Err( EMDError{details: String::from("Problem infeasible. Check that a and b are in the simplex")} )
     } else {
-        Err( ProblemError{details: String::from("Problem infeasible. Check that a and b are in the simplex")} )
+        Err( EMDError{details: String::from("Problem infeasible. Check that a and b are in the simplex")} )
     }
 
 }
@@ -286,7 +327,7 @@ mod tests {
                                 &[0.0, 1.0,
                                 1.0, 0.0]);
 
-        let gamma = super::emd(&mut a, &mut b, &mut M, 100000, true);
+        let gamma = super::emd(&mut a, &mut b, &mut M, None, None);
 
         let truth = DMatrix::<f64>::from_row_slice(2, 2,
                                 &[0.5, 0.0,

@@ -18,9 +18,6 @@
 
 extern crate nalgebra as na;
 
-use std::error::Error;
-use std::fmt;
-
 pub mod ot;
 pub mod regularized;
 pub mod unbalanced;
@@ -37,29 +34,4 @@ mod ffi {
     }
 
 }
-
-enum ProblemType {
-    Infeasible=0,
-    Optimal=1,
-    Unbounded=2,
-    MaxIterReached=3
-}
-
-#[derive(Debug)]
-struct ProblemError {
-    details: String
-}
-
-impl fmt::Display for ProblemError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self.details)
-    }
-}
-
-impl Error for ProblemError {
-    fn description(&self) -> &str {
-        &self.details
-    }
-}
-
 
