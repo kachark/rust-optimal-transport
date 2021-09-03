@@ -3,43 +3,26 @@ use std::error::Error;
 use std::fmt;
 use na::{DVector, DMatrix};
 
-enum EMDStatus {
+use crate::OTError;
+
+enum FastTransportResult {
     Infeasible=0,
     Optimal=1,
     Unbounded=2,
     MaxIterReached=3
 }
 
-#[derive(Debug)]
-struct EMDError {
-    details: String
-}
-
-impl fmt::Display for EMDError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self.details)
-    }
-}
-
-impl Error for EMDError {
-    fn description(&self) -> &str {
-        &self.details
-    }
-}
-
-
-
 /// Solves the Earth Movers distance problem and returns the OT matrix
 /// a: Source histogram (uniform weight if empty)
 /// b: Target histogram (uniform weight if empty)
 /// M: Loss matrix (row-major)
 /// num_iter_max: maximum number of iterations before stopping the optimization algorithm if it has
-/// not converged
-/// center_dual: If True, centers the dual potential using function
+/// not converged (default = 100000)
+/// center_dual: If True, centers the dual potential using function (default = true)
 #[allow(non_snake_case)]
 pub fn emd(a: &mut DVector<f64>, b: &mut DVector<f64>,
        M: &mut DMatrix<f64>, num_iter_max: Option<i32>,
-       center_dual: Option<bool>) -> DMatrix<f64> {
+       center_dual: Option<bool>) -> Result<DMatrix<f64>, OTError> {
 
     // Defaults
     let mut iterations = 100000;
@@ -53,30 +36,40 @@ pub fn emd(a: &mut DVector<f64>, b: &mut DVector<f64>,
     }
 
     let (m0, m1) = M.shape();
+    let dim_a;
+    let dim_b;
 
     // if a and b empty, default to uniform distribution
     if a.len() == 0 {
         *a = DVector::from_vec(vec![1f64; m0]).scale(1f64/m0 as f64);
+        dim_a = m0;
+    } else {
+        dim_a = a.len();
     }
 
     if b.len() == 0 {
         *b = DVector::from_vec(vec![1f64; m1]).scale(1f64/m1 as f64);
+        dim_b = m1;
+    } else {
+        dim_b = b.len();
     }
 
-    // TODO: add error handling
     // Check dimensions
-    assert_eq!(a.len(), m0, "Dimension mismatch check dimensions of M with a");
-    assert_eq!(b.len(), m1, "Dimension mismatch check dimensions of M with b");
+    if dim_a != m0 && dim_b != m1 {
+        return Err( OTError::DimensionError{ dim_a, dim_b, dim_m_0: m0, dim_m_1: m1 } )
+    }
 
     // Ensure the same mass
-    assert_eq!(a.sum(), b.sum(), "a and b vector must have the same sum");
+    if a.sum() != b.sum() {
+        return Err( OTError::HistogramSumError{ mass_a: a.sum(), mass_b: b.sum() } )
+    }
 
     // b = b * a.sum/b.sum
     b.scale_mut(a.sum()/b.sum());
 
     // not_asel == ~asel, not_bsel == ~bsel
     // binary indexing of non-zero weights
-    let mut not_asel = DVector::<i32>::zeros(a.len());
+    let mut not_asel = DVector::<i32>::zeros(dim_a);
     for (i, val) in a.iter().enumerate() {
         if *val == 0f64 {
             not_asel[i] = 1;
@@ -85,7 +78,7 @@ pub fn emd(a: &mut DVector<f64>, b: &mut DVector<f64>,
         }
     }
 
-    let mut not_bsel = DVector::<i32>::zeros(b.len());
+    let mut not_bsel = DVector::<i32>::zeros(dim_b);
     for (i, val) in b.iter().enumerate() {
         if *val == 0f64 {
             not_bsel[i] = 1;
@@ -108,11 +101,10 @@ pub fn emd(a: &mut DVector<f64>, b: &mut DVector<f64>,
         v = result.1;
     }
 
-    // TODO: DO NOT PANIC
-    match check_result(result_code) {
-        Err(error) => panic!("{:?}", error),
-        Ok(_) => G
-    }
+    // Propogate errors if there are any
+    check_result(result_code)?;
+
+    Ok(G)
 
 }
 
@@ -156,6 +148,9 @@ fn emd_c(a: &mut DVector<f64>, b: &mut DVector<f64>, M: &mut DMatrix<f64>, max_i
 
 }
 
+/// Finds a unique dual potential such that the same objective value is achieved for both
+/// source and target potentials. Helps ensure stability of the linear program solver
+/// when calling multiple times with minor changes.
 fn center_ot_dual(
     alpha0: &DVector<f64>, beta0: &DVector<f64>,
     a: Option<&DVector<f64>>, b: Option<&DVector<f64>>)
@@ -273,18 +268,18 @@ fn estimate_dual_null_weights(
 }
 
 /// Convert FastTransport error codes to EMDErrors
-fn check_result(result_code: i32) -> Result<(), EMDError> {
+fn check_result(result_code: i32) -> Result<(), OTError> {
 
-    if result_code == EMDStatus::Optimal as i32 {
+    if result_code == FastTransportResult::Optimal as i32 {
         Ok(())
-    } else if result_code == EMDStatus::Unbounded as i32 {
-        Err( EMDError{details: String::from("Problem unbounded")} )
-    } else if result_code == EMDStatus::MaxIterReached as i32 {
-        Err( EMDError{details: String::from("numItermax reached before optimality. Try to increase numItermax")} )
-    } else if result_code == EMDStatus::Infeasible as i32 {
-        Err( EMDError{details: String::from("Problem infeasible. Check that a and b are in the simplex")} )
+    } else if result_code ==FastTransportResult::Unbounded as i32 {
+        Err( OTError::FastTransportError(String::from("Problem unbounded")) )
+    } else if result_code ==FastTransportResult::MaxIterReached as i32 {
+        Err( OTError::FastTransportError(String::from("numItermax reached before optimality. Try to increase numItermax")) )
+    } else if result_code ==FastTransportResult::Infeasible as i32 {
+        Err( OTError::FastTransportError(String::from("Problem infeasible. Check that a and b are in the simplex")) )
     } else {
-        Err( EMDError{details: String::from("Problem infeasible. Check that a and b are in the simplex")} )
+        Err( OTError::FastTransportError(String::from("Problem infeasible. Check that a and b are in the simplex")) )
     }
 
 }
@@ -327,7 +322,10 @@ mod tests {
                                 &[0.0, 1.0,
                                 1.0, 0.0]);
 
-        let gamma = super::emd(&mut a, &mut b, &mut M, None, None);
+        let gamma = match super::emd(&mut a, &mut b, &mut M, None, None) {
+            Ok(result) => result,
+            Err(error) => panic!("{:?}", error)
+        };
 
         let truth = DMatrix::<f64>::from_row_slice(2, 2,
                                 &[0.5, 0.0,

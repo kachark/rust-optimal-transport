@@ -11,12 +11,14 @@
  *  C++ interface written by:
  *  It was written by Antoine Rolet (2014) and mainly consists of a wrapper
  *  of the code written by Nicolas Bonneel available on this page
- *  http://people.seas.harvard.edu/~nbonneel/FastTransport/
+ *  https://github.com/nbonneel/network_simplex
  *
 */
 
 
 extern crate nalgebra as na;
+
+use thiserror::Error;
 
 pub mod ot;
 pub mod regularized;
@@ -35,3 +37,20 @@ mod ffi {
 
 }
 
+#[derive(Error, Debug)]
+pub enum OTError {
+    #[error("Histogram weights dimensions, a {dim_a:?} and b {dim_b:?}, do not match loss matrix dimensions, ({dim_m_0:?}, {dim_m_1:?})")]
+    DimensionError {
+        dim_a: usize,
+        dim_b: usize,
+        dim_m_0: usize,
+        dim_m_1: usize
+    },
+    #[error("Histogram weights do not sum to zero")]
+    HistogramSumError {
+        mass_a: f64,
+        mass_b: f64
+    },
+    #[error("Fast transport failed: '{0}'")]
+    FastTransportError(String)
+}

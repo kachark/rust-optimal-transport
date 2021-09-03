@@ -1,17 +1,19 @@
 
 use na::{DVector, dvector, DMatrix};
 
+use crate::OTError;
+
 
 /// Solves the entropic regularization optimal transport problem and returns the OT matrix
 /// a: Unnormalized histogram of dimension dim_a
 /// b: Unnormalized histogram of dimension dim_b
 /// M: Loss matrix
 /// reg: Entropy regularization term > 0
-/// num_iter_max: Max number of iterations
-/// stop_threshold: Stop threshold on error (> 0)
+/// num_iter_max: Max number of iterations (default = 1000)
+/// stop_threshold: Stop threshold on error (> 0) (default = 1E-6)
 pub fn sinkhorn_knopp(
     a: &mut DVector<f64>, b: &mut DVector<f64>, M: &mut DMatrix<f64>,
-    reg: f64, num_iter_max: Option<i32>, stop_threshold: Option<f64>) -> DMatrix<f64> {
+    reg: f64, num_iter_max: Option<i32>, stop_threshold: Option<f64>) -> Result<DMatrix<f64>, OTError> {
 
     // Defaults
     let mut iterations = 1000;
@@ -24,15 +26,33 @@ pub fn sinkhorn_knopp(
         stop = val;
     }
 
-    let (dim_a, dim_b) = M.shape();
+    let (m0, m1) = M.shape();
+    let dim_a;
+    let dim_b;
 
     // if a and b empty, default to uniform distribution
     if a.len() == 0 {
-        *a = DVector::from_vec(vec![1f64 / (dim_a as f64); dim_a]);
+        *a = DVector::from_vec(vec![1f64 / (m0 as f64); m0]);
+        dim_a = m0;
+    } else {
+        dim_a = a.len();
     }
 
     if b.len() == 0 {
-        *b = DVector::from_vec(vec![1f64 / (dim_b as f64); dim_b]);
+        *b = DVector::from_vec(vec![1f64 / (m1 as f64); m1]);
+        dim_b = m1;
+    } else {
+        dim_b = b.len();
+    }
+
+    // Check dimensions
+    if dim_a != m0 && dim_b != m1 {
+        return Err( OTError::DimensionError{ dim_a, dim_b, dim_m_0: m0, dim_m_1: m1 } )
+    }
+
+    // Ensure the same mass
+    if a.sum() != b.sum() {
+        return Err( OTError::HistogramSumError{ mass_a: a.sum(), mass_b: b.sum() } )
     }
 
     // we assume that no distances are null except those of the diagonal distances
@@ -122,7 +142,7 @@ pub fn sinkhorn_knopp(
         }
     }
 
-    k
+    Ok(k)
 
 }
 
@@ -139,8 +159,10 @@ mod tests {
         let reg = 1.0;
         let mut m = DMatrix::<f64>::from_row_slice(2, 2, &[0.0, 1.0, 1.0, 0.0]);
 
-        let result = super::sinkhorn_knopp(&mut a, &mut b, &mut m,
-                                            reg, None, None);
+        let result = match super::sinkhorn_knopp(&mut a, &mut b, &mut m, reg, None, None) {
+            Ok(result) => result,
+            Err(error) => panic!("{:?}", error)
+        };
 
         let truth = DMatrix::from_row_slice(2,2,
                     &[0.36552929, 0.13447071,

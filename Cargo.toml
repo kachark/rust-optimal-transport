@@ -8,6 +8,7 @@ edition = "2018"
 
 [dependencies]
 cxx = "1.0"
+thiserror = "1.0"
 nalgebra = "0.29.0"
 
 [build-dependencies]
