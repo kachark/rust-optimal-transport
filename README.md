@@ -12,6 +12,7 @@ Heavily inspired by [Python Optimal Transport](https://pythonot.github.io), this
 The library has been tested on macOS. It requires a C++ compiler for building the EMD solver and relies on the following Rust libraries:
 
 - cxx 1.0
+- thiserror 1.0
 - nalgebra 0.29.0
 
 #### Cargo installation
