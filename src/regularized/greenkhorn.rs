@@ -49,7 +49,7 @@ pub fn greenkhorn(
     }
 
     // Check dimensions
-    if dim_a != m0 && dim_b != m1 {
+    if dim_a != m0 || dim_b != m1 {
         return Err( OTError::DimensionError{ dim_a, dim_b, dim_m_0: m0, dim_m_1: m1 } )
     }
 
