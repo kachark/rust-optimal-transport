@@ -51,11 +51,6 @@ pub fn sinkhorn_knopp_unbalanced(
         return Err( OTError::DimensionError{ dim_a, dim_b, dim_m_0: m0, dim_m_1: m1 } )
     }
 
-    // Ensure the same mass
-    if a.sum() != b.sum() {
-        return Err( OTError::HistogramSumError{ mass_a: a.sum(), mass_b: b.sum() } )
-    }
-
     // we assume that no distances are null except those of the diagonal distances
     let mut u = DVector::<f64>::from_vec(vec![1f64 / (dim_a as f64); dim_a]);
     let mut v = DVector::<f64>::from_vec(vec![1f64 / (dim_b as f64); dim_b]);
