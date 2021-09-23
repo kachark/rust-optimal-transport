@@ -52,5 +52,7 @@ pub enum OTError {
         mass_b: f64
     },
     #[error("Fast transport failed: '{0}'")]
-    FastTransportError(String)
+    FastTransportError(String),
+    #[error("Invalid argument: '{0}'")]
+    ArgError(String),
 }
