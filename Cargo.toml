@@ -9,7 +9,9 @@ edition = "2018"
 [dependencies]
 cxx = "1.0"
 thiserror = "1.0"
-nalgebra = "0.29.0"
+#nalgebra = "0.29.0"
+ndarray = "0.15.4"
+ndarray_einsum_beta = "0.7.0"
 
 [build-dependencies]
 cxx-build = "1.0"

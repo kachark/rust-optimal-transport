@@ -16,13 +16,11 @@
 */
 
 
-extern crate nalgebra as na;
-
 use thiserror::Error;
 
 pub mod ot;
-pub mod regularized;
-pub mod unbalanced;
+// pub mod regularized;
+// pub mod unbalanced;
 pub mod utils;
 
 #[cxx::bridge]
