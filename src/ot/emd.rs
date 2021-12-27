@@ -40,14 +40,14 @@ pub fn emd(a: &mut Array1<f64>, b: &mut Array1<f64>,
     let dim_b;
 
     // if a and b empty, default to uniform distribution
-    if a.len() == 0 {
+    if a.is_empty() {
         *a = Array1::from_vec(vec![1f64/(m0 as f64); m0]);
         dim_a = m0;
     } else {
         dim_a = a.len();
     }
 
-    if b.len() == 0 {
+    if b.is_empty() {
         *b = Array1::from_vec(vec![1f64/(m1 as f64); m1]);
         dim_b = m1;
     } else {
@@ -126,11 +126,11 @@ fn emd_c(a: &mut Array1<f64>, b: &mut Array1<f64>, M: &mut Array2<f64>, max_iter
     let mut beta = Array1::<f64>::zeros(n2);
     let mut G = Array2::<f64>::zeros( (n1, n2) );
 
-    if a.len() == 0 {
+    if a.is_empty() {
         *a = Array1::from_vec(vec![1f64/(n1 as f64); n1]);
     }
 
-    if b.len() == 0 {
+    if b.is_empty() {
         *b = Array1::from_vec(vec![1f64/(n2 as f64); n2]);
     }
 
@@ -283,7 +283,7 @@ fn check_result(result_code: i32) -> Result<(), OTError> {
     } else if result_code ==FastTransportResult::Infeasible as i32 {
         Err( OTError::FastTransportError(String::from("Problem infeasible. Check that a and b are in the simplex")) )
     } else {
-        Err( OTError::FastTransportError(String::from("Problem infeasible. Check that a and b are in the simplex")) )
+        Err( OTError::Error("oops!".to_string()) )
     }
 
 }

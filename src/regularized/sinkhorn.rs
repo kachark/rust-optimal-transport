@@ -1,5 +1,7 @@
 
-use na::{DVector, dvector, DMatrix};
+use ndarray::prelude::*;
+use ndarray_einsum_beta::einsum;
+use ndarray_linalg::norm::{Norm, self};
 
 use crate::OTError;
 
@@ -12,8 +14,8 @@ use crate::OTError;
 /// num_iter_max: Max number of iterations (default = 1000)
 /// stop_threshold: Stop threshold on error (> 0) (default = 1E-6)
 pub fn sinkhorn_knopp(
-    a: &mut DVector<f64>, b: &mut DVector<f64>, M: &mut DMatrix<f64>,
-    reg: f64, num_iter_max: Option<i32>, stop_threshold: Option<f64>) -> Result<DMatrix<f64>, OTError> {
+    a: &mut Array1<f64>, b: &mut Array1<f64>, M: &mut Array2<f64>,
+    reg: f64, num_iter_max: Option<i32>, stop_threshold: Option<f64>) -> Result<Array2<f64>, OTError> {
 
     // Defaults
     let mut iterations = 1000;
@@ -26,20 +28,22 @@ pub fn sinkhorn_knopp(
         stop = val;
     }
 
-    let (m0, m1) = M.shape();
+    let mshape = M.shape();
+    let m0 = mshape[0];
+    let m1 = mshape[1];
     let dim_a;
     let dim_b;
 
     // if a and b empty, default to uniform distribution
-    if a.len() == 0 {
-        *a = DVector::from_vec(vec![1f64 / (m0 as f64); m0]);
+    if a.is_empty() {
+        *a = Array1::from_vec(vec![1f64 / (m0 as f64); m0]);
         dim_a = m0;
     } else {
         dim_a = a.len();
     }
 
-    if b.len() == 0 {
-        *b = DVector::from_vec(vec![1f64 / (m1 as f64); m1]);
+    if b.is_empty() {
+        *b = Array1::from_vec(vec![1f64 / (m1 as f64); m1]);
         dim_b = m1;
     } else {
         dim_b = b.len();
@@ -56,8 +60,8 @@ pub fn sinkhorn_knopp(
     }
 
     // we assume that no distances are null except those of the diagonal distances
-    let mut u = DVector::<f64>::from_vec(vec![1f64 / (dim_a as f64); dim_a]);
-    let mut v = DVector::<f64>::from_vec(vec![1f64 / (dim_b as f64); dim_b]);
+    let mut u = Array1::<f64>::from_vec(vec![1f64 / (dim_a as f64); dim_a]);
+    let mut v = Array1::<f64>::from_vec(vec![1f64 / (dim_b as f64); dim_b]);
 
     // K = exp(-M/reg)
     let mut k = M.clone();
@@ -65,20 +69,20 @@ pub fn sinkhorn_knopp(
         *m = (*m/-reg).exp();
     }
 
-    for _ in 0..iterations {
+    for count in 0..iterations {
 
         let uprev = u.clone();
         let vprev = v.clone();
 
         // Update u and v
         // u = a/kv
-        let kv = &k * &v;
+        let kv = &k.dot(&v);
         for (i, ele_u) in u.iter_mut().enumerate() {
             *ele_u = a[i] / kv[i];
         }
 
         // v = b/ktu
-        let ktu = &k.transpose() * &u;
+        let ktu = &k.t().dot(&u);
         for (i, ele_v) in v.iter_mut().enumerate() {
             *ele_v = b[i] / ktu[i];
         }
@@ -124,19 +128,30 @@ pub fn sinkhorn_knopp(
             break;
         }
 
-        // check for machine precision
-        let err_u = (&u-&uprev).amax() / (dvector![u.amax(), uprev.amax(), 1f64].max());
-        let err_v = (&v-&vprev).amax() / (dvector![v.amax(), vprev.amax(), 1f64].max());
-        let err = 0.5 * (err_u + err_v);
-        if err < stop {
-            break;
+        if count % 10 == 0 {
+
+            let mut tmp = einsum("i,ij,j->j", &[&u,&k,&v]).unwrap();
+            tmp -= &b.clone();
+            let err = norm::Norm::norm(&tmp);
+            if err < stop {
+                break;
+            }
+
         }
+
+        // check for machine precision
+        // let err_u = (&u-&uprev).amax() / (array![u.amax(), uprev.amax(), 1f64].max());
+        // let err_v = (&v-&vprev).amax() / (array![v.amax(), vprev.amax(), 1f64].max());
+        // let err = 0.5 * (err_u + err_v);
+        // if err < stop {
+        //     break;
+        // }
 
     }
 
     // nhists = 1 case only
     // diag(u)*K*diag(v)
-    for (i, mut row) in k.row_iter_mut().enumerate() {
+    for (i, mut row) in k.axis_iter_mut(Axis(0)).enumerate() {
         for (j, k) in row.iter_mut().enumerate() {
             *k *= u[i] * v[j];
         }
@@ -149,24 +164,22 @@ pub fn sinkhorn_knopp(
 #[cfg(test)]
 mod tests {
 
-    use na::{DVector, DMatrix};
+    use ndarray::prelude::*;
 
     #[test]
     fn test_sinkhorn_knopp() {
 
-        let mut a = DVector::from_vec(vec![0.5, 0.5]);
-        let mut b = DVector::from_vec(vec![0.5, 0.5]);
+        let mut a = Array1::from_vec(vec![0.5, 0.5]);
+        let mut b = Array1::from_vec(vec![0.5, 0.5]);
         let reg = 1.0;
-        let mut m = DMatrix::<f64>::from_row_slice(2, 2, &[0.0, 1.0, 1.0, 0.0]);
+        let mut m = array![[0.0, 1.0], [1.0, 0.0]];
 
         let result = match super::sinkhorn_knopp(&mut a, &mut b, &mut m, reg, None, None) {
             Ok(result) => result,
             Err(error) => panic!("{:?}", error)
         };
 
-        let truth = DMatrix::from_row_slice(2,2,
-                    &[0.36552929, 0.13447071,
-                    0.13447071, 0.36552929]);
+        let truth = array![[0.36552929, 0.13447071], [0.13447071, 0.36552929]];
 
         assert!(result.relative_eq(&truth, 1E-6, 1E-2));
 
