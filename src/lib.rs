@@ -20,7 +20,7 @@ use thiserror::Error;
 
 pub mod ot;
 pub mod regularized;
-// pub mod unbalanced;
+pub mod unbalanced;
 pub mod utils;
 
 #[cxx::bridge]

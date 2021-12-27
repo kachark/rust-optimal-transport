@@ -298,7 +298,7 @@ mod tests {
     #[test]
     fn test_emd_c() {
 
-        let mut a = array![0.5, 0.5];  // this won't work
+        let mut a = array![0.5, 0.5];
         let mut b = array![0.5, 0.5];
         let mut M = array![[0.0, 1.0],[1.0, 0.0]];
 
