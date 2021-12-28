@@ -169,8 +169,8 @@ mod tests {
     #[test]
     fn test_sinkhorn_knopp() {
 
-        let mut a = Array1::from_vec(vec![0.5, 0.5]);
-        let mut b = Array1::from_vec(vec![0.5, 0.5]);
+        let mut a = array![0.5, 0.5];
+        let mut b = array![0.5, 0.5];
         let reg = 1.0;
         let mut m = array![[0.0, 1.0], [1.0, 0.0]];
 

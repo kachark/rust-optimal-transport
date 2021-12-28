@@ -1,5 +1,6 @@
 
 use ndarray::prelude::*;
+use ndarray_stats::QuantileExt;
 
 use crate::OTError;
 
@@ -93,11 +94,22 @@ pub fn greenkhorn(
 
     for _ in 0..iterations {
 
-        // TODO: implement argmax
-        let (i_1, val_1) = viol.abs().argmax();
-        let (i_2, val_2) = viol_2.abs().argmax();
-        let m_viol_1 = val_1.abs();
-        let m_viol_2 = val_2.abs();
+        let viol_abs: Array1<f64> = viol.iter().map(|x| x.abs()).collect();
+        let viol_2_abs: Array1<f64> = viol_2.iter().map(|x| x.abs()).collect();
+
+        // TODO: propagate errors, don't panic
+        let i_1 = match viol_abs.argmax() {
+            Ok(val) => val,
+            Err(err) => panic!(err)
+        };
+
+        let i_2 = match viol_2_abs.argmax() {
+            Ok(val) => val,
+            Err(err) => panic!(err)
+        };
+
+        let m_viol_1 = viol_abs[i_1];
+        let m_viol_2 = viol_2_abs[i_2];
 
         if m_viol_1 >= m_viol_2 {
             stop_val = m_viol_1;
@@ -130,7 +142,7 @@ pub fn greenkhorn(
 
             // viol_2 += (K[i_1, :].T * (u[i_1] - old_u) * v)
             for (j, ele) in viol_2.iter_mut().enumerate() {
-                *ele += &k_i1.t()[j] * (u[i_1] - old_u) * v[j];
+                *ele += k_i1.t()[j] * (u[i_1] - old_u) * v[j];
             }
 
         } else {
@@ -181,8 +193,8 @@ mod tests {
     #[test]
     fn test_greenkhorn() {
 
-        let mut a = Array1::from_vec(vec![0.5, 0.5]);
-        let mut b = Array1::from_vec(vec![0.5, 0.5]);
+        let mut a = array![0.5, 0.5];
+        let mut b = array![0.5, 0.5];
         let reg = 1.0;
         let mut m = array![[0.0, 1.0], [1.0, 0.0]];
 
@@ -191,7 +203,7 @@ mod tests {
             Err(error) => panic!("{:?}", error)
         };
 
-        println!("{:?}", result);
+        // println!("{:?}", result);
 
         let truth = array![[0.36552929, 0.13447071], [0.13447071, 0.36552929]];
 

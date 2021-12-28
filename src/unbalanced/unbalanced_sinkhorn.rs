@@ -168,8 +168,8 @@ mod tests {
     #[test]
     fn test_sinkhorn_knopp_unbalanced() {
 
-        let mut a = Array1::from_vec(vec![1./3., 1./3., 1./3.]);
-        let mut b = Array1::from_vec(vec![1./4., 1./4., 1./4., 1./4.]);
+        let mut a = array![1./3., 1./3., 1./3.];
+        let mut b = array![1./4., 1./4., 1./4., 1./4.];
         let reg = 2.0;
         let reg_m = 3.0;
         let mut m = array![[0.5, 0.0, 0.0, 0.0],
