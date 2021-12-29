@@ -1,5 +1,6 @@
 
 use ndarray::prelude::*;
+use anyhow::anyhow;
 
 use crate::OTError;
 
@@ -283,7 +284,7 @@ fn check_result(result_code: i32) -> Result<(), OTError> {
     } else if result_code ==FastTransportResult::Infeasible as i32 {
         Err( OTError::FastTransportError(String::from("Problem infeasible. Check that a and b are in the simplex")) )
     } else {
-        Err( OTError::Error("oops!".to_string()) )
+        Err( OTError::Other(anyhow!("oops!")) )
     }
 
 }

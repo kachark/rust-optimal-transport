@@ -53,6 +53,6 @@ pub enum OTError {
     FastTransportError(String),
     #[error("Invalid argument: '{0}'")]
     ArgError(String),
-    #[error("Error: '{0}'")]
-    Error(String)
+    #[error(transparent)]
+    Other(#[from] anyhow::Error),
 }
