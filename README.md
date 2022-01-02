@@ -13,7 +13,7 @@ The library has been tested on macOS. It requires a C++ compiler for building th
 
 - cxx 1.0
 - thiserror 1.0
-- nalgebra 0.29.0
+- ndarray 0.15
 
 #### Cargo installation
 Edit your Cargo.toml with the following to add ROT as a dependency for your project (uses git url pending publishing on Cargo)
@@ -43,12 +43,13 @@ use rot::utils::metrics::{dist, MetricType};
 // a, b are weights for source and target densities
 // M is the ground cost matrix
 
-let mut a = DVector::<f64>::from_vec(vec![1f64 / 5f64; 5]);
-let mut b = DVector::<f64>::from_vec(vec![1f64 / 5f64; 5]);
+// Generate data
+let xs = Array2::<f64>::zeros( (5, 5) );
+let xt = Array2::<f64>::from_elem( (5, 5), 5.0 );
 
-// Create row-major matrices where each row is an element/state within the density
-let xs = DMatrix::<f64>::zeros(3, 5);
-let xt = DMatrix::from_row_slice(3, 5, vec![5.0; 15].as_slice());
+// Uniform distribution on the samples
+let mut a = Array1::<f64>::from_vec(vec![1f64 / 5f64; 5]);
+let mut b = Array1::<f64>::from_vec(vec![1f64 / 5f64; 5]);
 
 // Compute ground cost matrix - Euclidean distance
 let mut M = dist(&xs, &xt, MetricType::Euclidean);

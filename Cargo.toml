@@ -14,6 +14,7 @@ ndarray = "0.15.4"
 ndarray_einsum_beta = "0.7.0"
 ndarray-linalg = { version = "0.14", features = ["openblas-system"] }
 ndarray-stats = "0.5"
+ndarray-rand = "0.14"
 
 [build-dependencies]
 cxx-build = "1.0"
