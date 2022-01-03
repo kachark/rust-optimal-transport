@@ -3,16 +3,21 @@
 pub mod distributions {
 
 use ndarray::prelude::*;
-use ndarray_rand::RandomExt;
+use ndarray_linalg::error::LinalgError;
 use ndarray_rand::rand::{thread_rng, Rng};
 use ndarray_rand::rand_distr::StandardNormal;
+use ndarray_linalg::cholesky::*;
+
 use thiserror::Error;
+use anyhow::anyhow;
 
 // TODO: Add additional error cases for DistributionError enum
 #[derive(Error, Debug)]
 pub enum DistributionError {
     #[error("Oops!")]
-    Gauss1DError(String),
+    Oops(String),
+    #[error(transparent)]
+    Other(#[from] anyhow::Error),
 }
 
 
@@ -42,9 +47,21 @@ pub fn get_1D_gauss_histogram(n: i32, mean: f64, std: f64) -> Result<Array1<f64>
 /// n: number of samples to take
 /// mean: mean values (x,y) of distribution
 /// cov: covariance matrix of the distribution
-pub fn sample_2D_gauss(n: i32, mean: Array1<f64>, cov: Array2<f64>) -> Result<Array2<f64>, DistributionError> {
+pub fn sample_2D_gauss(n: i32, mean: &Array1<f64>, cov: &Array2<f64>) -> Result<Array2<f64>, DistributionError> {
 
-    // TODO: check that size of cov and mean match up
+    let cov_shape = cov.shape();
+
+    if n <= 0 {
+        return Err(DistributionError::Oops("n is not greater than zero".to_string()));
+    }
+
+    if mean.is_empty() || cov.is_empty() {
+        return Err(DistributionError::Oops("zero length mean or covariance".to_string()));
+    }
+
+    if cov_shape[0] != mean.len() && cov_shape[1] != mean.len() {
+        return Err(DistributionError::Oops("covariance dimensions do not match mean dimensions".to_string()));
+    }
 
     let mut rng = thread_rng();
     let mut samples = Array2::<f64>::zeros( (n as usize, 2) );
@@ -53,7 +70,17 @@ pub fn sample_2D_gauss(n: i32, mean: Array1<f64>, cov: Array2<f64>) -> Result<Ar
         row[1] = rng.sample(StandardNormal);
     }
 
-    Ok(samples.dot(&cov.mapv(f64::sqrt)) + mean)
+    // add small perturbation to covariance matrix for numerical stability
+    let epsilon = 0.0001;
+    let cov_perturbed = cov + Array2::<f64>::eye(cov_shape[0])*epsilon;
+
+    // Compute cholesky decomposition
+    let lower = match cov_perturbed.cholesky(UPLO::Lower) {
+        Ok(val) => val,
+        Err(_) => return Err( DistributionError::Other(anyhow!("oops!")) )
+    };
+
+    Ok(mean + samples.dot(&lower))
 
 }
 
@@ -230,7 +257,7 @@ mod tests {
         let mean = array![0.0, 0.0];
         let covariance = array![[1.0, 0.0], [0.0, 1.0]];
 
-        let result = match distributions::sample_2D_gauss(n, mean, covariance) {
+        let result = match distributions::sample_2D_gauss(n, &mean, &covariance) {
             Ok(val) => val,
             Err(err) => panic!("{:?}", err)
         };

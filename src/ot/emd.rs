@@ -60,10 +60,10 @@ pub fn emd(a: &mut Array1<f64>, b: &mut Array1<f64>,
         return Err( OTError::DimensionError{ dim_a, dim_b, dim_m_0: m0, dim_m_1: m1 } )
     }
 
-    // Ensure the same mass
-    if a.sum() != b.sum() {
-        return Err( OTError::HistogramSumError{ mass_a: a.sum(), mass_b: b.sum() } )
-    }
+//     // Ensure the same mass
+//     if a.sum() != b.sum() {
+//         return Err( OTError::HistogramSumError{ mass_a: a.sum(), mass_b: b.sum() } )
+//     }
 
     // b = b * a.sum/b.sum
     // b.scale_mut(a.sum()/b.sum());

@@ -64,10 +64,7 @@ pub fn sinkhorn_knopp(
     let mut v = Array1::<f64>::from_vec(vec![1f64 / (dim_b as f64); dim_b]);
 
     // K = exp(-M/reg)
-    let mut k = M.clone();
-    for m in k.iter_mut() {
-        *m = (*m/-reg).exp();
-    }
+    let mut k = Array2::from_shape_fn( (mshape[0], mshape[1]), |(i, j)| (-M[[i,j]] / reg).exp() );
 
     for count in 0..iterations {
 

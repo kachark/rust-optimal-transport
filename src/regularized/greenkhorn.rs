@@ -26,7 +26,7 @@ pub fn greenkhorn(
         iterations = val;
     }
 
-    let mut stop = 1E-6;
+    let mut stop = 1E-9;
     if let Some(val) = stop_threshold {
         stop = val;
     }
@@ -36,6 +36,7 @@ pub fn greenkhorn(
     let m1 = mshape[1];
     let dim_a;
     let dim_b;
+    let mut stop_val;
 
     // if a and b empty, default to uniform distribution
     if a.is_empty() {
@@ -66,37 +67,26 @@ pub fn greenkhorn(
     let mut v = Array1::<f64>::from_vec(vec![1f64 / (dim_b as f64); dim_b]);
 
     // K = exp(-M/reg)
-    let mut k = M.clone();
-    for m in k.iter_mut() {
-        *m = (*m/-reg).exp();
-    }
+    let k = Array2::from_shape_fn( (mshape[0], mshape[1]), |(i, j)| (-M[[i,j]] / reg).exp() );
 
-    let mut G = k.clone();
-    // diag(u)*K*diag(v)
-    for (i, mut row) in G.axis_iter_mut(Axis(0)).enumerate() {
-        for (j, g) in row.iter_mut().enumerate() {
-            *g *= u[i] * v[j];
-        }
-    }
-
-    let mut viol = Array1::<f64>::zeros(dim_a);
-    let mut viol_2 = Array1::<f64>::zeros(dim_b);
-    let mut stop_val;
+    let mut G = &u.diag().t() * &k * &v.diag();
 
     // G.sum(1) - a
-    for (i, x) in G.sum_axis(Axis(0)).iter().enumerate() {
-        viol[i] = x - a[i];
-    }
+    let mut viol: Array1<f64> = G.sum_axis(Axis(1)).iter()
+        .enumerate()
+        .map(|(i, sum_i)| sum_i - a[i])
+        .collect();
 
     // G.sum(0) - b
-    for (i, x) in G.sum_axis(Axis(1)).iter().enumerate() {
-        viol_2[i] = x - b[i];
-    }
+    let mut viol_2: Array1<f64> = G.sum_axis(Axis(0)).iter()
+        .enumerate()
+        .map(|(i, sum_i)| sum_i - b[i])
+        .collect();
 
     for _ in 0..iterations {
 
         // Absolute values
-        let viol_abs: Array1<f64> = viol.iter().map(|x| x.abs()).collect();
+        let viol_abs: Array1<f64> = viol.iter().map(|x| x.abs()).collect(); // NOTE: messes up somehow
         let viol_2_abs: Array1<f64> = viol_2.iter().map(|x| x.abs()).collect();
 
         // Argmax
@@ -125,12 +115,11 @@ pub fn greenkhorn(
         if m_viol_1 > m_viol_2 {
 
             let old_u = u[i_1];
-            let k_i1_vec: Vec<f64> = k.row(i_1).iter().map(|x| *x).collect();
-            let k_i1 = Array1::<f64>::from_vec(k_i1_vec);
+            let k_i1 = &k.row(i_1);
             let denom = k_i1.dot(&v);
-            u[i_1] = a[i_1] / denom;
+            let new_u = a[i_1] / denom;
 
-            // G[i_1, :] = u[i_1] * k[i_1, :] * v
+            // G[i_1, :] = new_u * k[i_1, :] * v
             for (i, mut row) in G.axis_iter_mut(Axis(0)).enumerate() {
 
                 if i != i_1 {
@@ -138,27 +127,29 @@ pub fn greenkhorn(
                 }
 
                 for (j, g) in row.iter_mut().enumerate() {
-                    *g = u[i_1] * k[(i_1, j)] * v[j];
+                    *g = new_u * k[(i_1, j)] * v[j];
                 }
 
             }
 
-            viol[i_1] = u[i_1] * denom - a[i_1];
+            // let tmp = k_i1.iter().map(|x| new_u*x).collect();
+            viol[i_1] = (k_i1.dot(&v) * new_u) - a[i_1];
 
             // viol_2 += (K[i_1, :].T * (u[i_1] - old_u) * v)
             for (j, ele) in viol_2.iter_mut().enumerate() {
-                *ele += k_i1.t()[j] * (u[i_1] - old_u) * v[j];
+                *ele += k_i1.t()[j] * (new_u - old_u) * v[j];
             }
+
+            u[i_1] = new_u;
 
         } else {
 
             let old_v = v[i_2];
-            let k_i2_vec: Vec<f64> = k.column(i_2).iter().map(|x| *x).collect();
-            let k_i2 = Array1::<f64>::from_vec(k_i2_vec);
-            let denom = k_i2.t().dot(&u.t());
-            v[i_2] = b[i_2] / denom;
+            let k_i2 = &k.column(i_2);
+            let denom = k_i2.dot(&u);
+            let new_v = b[i_2] / denom;
 
-            // G[i_1, :] = u[i_1] * k[i_1, :] * v
+            // G[:, i_2] = u * k[:, i_2] * new_v
             for (i, mut col) in G.axis_iter_mut(Axis(1)).enumerate() {
 
                 if i != i_2 {
@@ -166,17 +157,19 @@ pub fn greenkhorn(
                 }
 
                 for (j, g) in col.iter_mut().enumerate() {
-                    *g = u[j] * k[(j, i_2)] * v[i_2];
+                    *g = u[j] * k[(j, i_2)] * new_v;
                 }
 
             }
 
             // viol += (-old_v + v[i_2]) * K[:, i_2] * u
             for (j, ele) in viol.iter_mut().enumerate() {
-                *ele += (-old_v + v[i_2]) * k_i2[j] * u[j];
+                *ele += (-old_v + new_v) * k_i2[j] * u[j];
             }
 
-            viol_2[i_2] = v[i_2] * k_i2.dot(&u) - b[i_2];
+            viol_2[i_2] = new_v * k_i2.dot(&u) - b[i_2];
+
+            v[i_2] = new_v;
 
         }
 
@@ -208,7 +201,7 @@ mod tests {
             Err(error) => panic!("{:?}", error)
         };
 
-        // println!("{:?}", result);
+        println!("{:?}", result);
 
         let truth = array![[0.36552929, 0.13447071], [0.13447071, 0.36552929]];
 
