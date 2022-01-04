@@ -31,7 +31,7 @@ fn emd_integration_test() {
     let mut ground_cost = rot::utils::metrics::dist(&x_reshaped, &x_reshaped, rot::utils::metrics::MetricType::SqEuclidean);
     ground_cost = &ground_cost / *ground_cost.max().unwrap();
 
-    let result = match rot::ot::emd::emd(&mut source_mass, &mut target_mass, &mut ground_cost, None, None) {
+    let result = match rot::ot::lp::emd(&mut source_mass, &mut target_mass, &mut ground_cost, None, None) {
         Ok(result) => result,
         Err(error) => panic!("{:?}", error)
     };
@@ -191,7 +191,7 @@ fn unbalanced_sinkhorn_integration_test() {
     ground_cost = &ground_cost / *ground_cost.max().unwrap();
 
     // Solve Earth Mover's Distance
-    let result = match rot::unbalanced::unbalanced_sinkhorn::sinkhorn_knopp_unbalanced(&mut source_mass, &mut target_mass, &mut ground_cost, epsilon, alpha, None, None) {
+    let result = match rot::unbalanced::sinkhorn_knopp_unbalanced(&mut source_mass, &mut target_mass, &mut ground_cost, epsilon, alpha, None, None) {
         Ok(result) => result,
         Err(err) => panic!("{:?}", err)
     };

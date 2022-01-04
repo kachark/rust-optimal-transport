@@ -58,10 +58,11 @@ pub fn greenkhorn(
         return Err( OTError::DimensionError{ dim_a, dim_b, dim_m_0: m0, dim_m_1: m1 } )
     }
 
-    // Ensure the same mass
-    if a.sum() != b.sum() {
-        return Err( OTError::HistogramSumError{ mass_a: a.sum(), mass_b: b.sum() } )
-    }
+    // TODO: same mass can be lost by summing with machine precision
+    // // Ensure the same mass
+    // if a.sum() != b.sum() {
+    //     return Err( OTError::HistogramSumError{ mass_a: a.sum(), mass_b: b.sum() } )
+    // }
 
     let mut u = Array1::<f64>::from_vec(vec![1f64 / (dim_a as f64); dim_a]);
     let mut v = Array1::<f64>::from_vec(vec![1f64 / (dim_b as f64); dim_b]);

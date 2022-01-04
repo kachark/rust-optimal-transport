@@ -5,7 +5,6 @@ use ndarray_linalg::norm::{Norm, self};
 
 use crate::OTError;
 
-
 /// Solves the entropic regularization optimal transport problem and returns the OT matrix
 /// a: Unnormalized histogram of dimension dim_a
 /// b: Unnormalized histogram of dimension dim_b
