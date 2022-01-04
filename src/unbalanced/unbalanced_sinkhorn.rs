@@ -24,7 +24,7 @@ pub fn sinkhorn_knopp_unbalanced(
         iterations = val;
     }
 
-    let mut stop = 1E-6;
+    let mut stop = 1E-9;
     if let Some(val) = stop_threshold {
         stop = val;
     }
@@ -34,6 +34,7 @@ pub fn sinkhorn_knopp_unbalanced(
     let m1 = mshape[1];
     let dim_a;
     let dim_b;
+    let fi = reg_m / (reg_m + reg);
 
     // if a and b empty, default to uniform distribution
     if a.is_empty() {
@@ -61,8 +62,6 @@ pub fn sinkhorn_knopp_unbalanced(
 
     // K = exp(-M/reg)
     let mut k = Array2::from_shape_fn( (mshape[0], mshape[1]), |(i, j)| (-M[[i,j]] / reg).exp() );
-
-    let fi = reg_m / (reg_m + reg);
 
     for count in 0..iterations {
 
@@ -133,14 +132,6 @@ pub fn sinkhorn_knopp_unbalanced(
             }
 
         }
-
-        // // check for machine precision
-        // let err_u = (&u-&uprev).amax() / (dvector![u.amax(), uprev.amax(), 1f64].max());
-        // let err_v = (&v-&vprev).amax() / (dvector![v.amax(), vprev.amax(), 1f64].max());
-        // let err = 0.5 * (err_u + err_v);
-        // if err < stop {
-        //     break;
-        // }
 
     }
 

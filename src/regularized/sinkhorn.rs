@@ -23,7 +23,7 @@ pub fn sinkhorn_knopp(
         iterations = val;
     }
 
-    let mut stop = 1E-6;
+    let mut stop = 1E-9;
     if let Some(val) = stop_threshold {
         stop = val;
     }
@@ -54,10 +54,11 @@ pub fn sinkhorn_knopp(
         return Err( OTError::DimensionError{ dim_a, dim_b, dim_m_0: m0, dim_m_1: m1 } )
     }
 
-    // Ensure the same mass
-    if a.sum() != b.sum() {
-        return Err( OTError::HistogramSumError{ mass_a: a.sum(), mass_b: b.sum() } )
-    }
+    // TODO: same mass can be lost by summing with machine precision
+    // // Ensure the same mass
+    // if a.sum() != b.sum() {
+    //     return Err( OTError::HistogramSumError{ mass_a: a.sum(), mass_b: b.sum() } )
+    // }
 
     // we assume that no distances are null except those of the diagonal distances
     let mut u = Array1::<f64>::from_vec(vec![1f64 / (dim_a as f64); dim_a]);
@@ -72,16 +73,18 @@ pub fn sinkhorn_knopp(
         let vprev = v.clone();
 
         // Update u and v
-        // u = a/kv
-        let kv = &k.dot(&v);
-        for (i, ele_u) in u.iter_mut().enumerate() {
-            *ele_u = a[i] / kv[i];
-        }
+        let ktu = &k.t().dot(&u);
 
         // v = b/ktu
-        let ktu = &k.t().dot(&u);
         for (i, ele_v) in v.iter_mut().enumerate() {
             *ele_v = b[i] / ktu[i];
+        }
+
+        let kv = &k.dot(&v);
+
+        // u = a/kv
+        for (i, ele_u) in u.iter_mut().enumerate() {
+            *ele_u = a[i] / kv[i];
         }
 
         // Check stop conditions
@@ -136,17 +139,8 @@ pub fn sinkhorn_knopp(
 
         }
 
-        // check for machine precision
-        // let err_u = (&u-&uprev).amax() / (array![u.amax(), uprev.amax(), 1f64].max());
-        // let err_v = (&v-&vprev).amax() / (array![v.amax(), vprev.amax(), 1f64].max());
-        // let err = 0.5 * (err_u + err_v);
-        // if err < stop {
-        //     break;
-        // }
-
     }
 
-    // nhists = 1 case only
     // diag(u)*K*diag(v)
     for (i, mut row) in k.axis_iter_mut(Axis(0)).enumerate() {
         for (j, k) in row.iter_mut().enumerate() {
