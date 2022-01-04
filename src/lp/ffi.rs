@@ -5,7 +5,7 @@ use ndarray::prelude::*;
 mod ffi {
 
     extern "C++" {
-        include!("rust-optimal-transport/src/fast_transport/EMD.h");
+        include!("rust-optimal-transport/src/lp/fast_transport/EMD.h");
 
         unsafe fn EMD_wrap(n1: i32, n2: i32, X: *mut f64, Y: *mut f64, D: *mut f64, G: *mut f64,
                     alpha: *mut f64, beta: *mut f64, cost: *mut f64, maxIter: i32) -> i32;

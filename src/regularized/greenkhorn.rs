@@ -87,7 +87,7 @@ pub fn greenkhorn(
     for _ in 0..iterations {
 
         // Absolute values
-        let viol_abs: Array1<f64> = viol.iter().map(|x| x.abs()).collect(); // NOTE: messes up somehow
+        let viol_abs: Array1<f64> = viol.iter().map(|x| x.abs()).collect();
         let viol_2_abs: Array1<f64> = viol_2.iter().map(|x| x.abs()).collect();
 
         // Argmax
