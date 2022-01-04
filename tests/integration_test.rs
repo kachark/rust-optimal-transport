@@ -31,7 +31,7 @@ fn emd_integration_test() {
     let mut ground_cost = rot::utils::metrics::dist(&x_reshaped, &x_reshaped, rot::utils::metrics::MetricType::SqEuclidean);
     ground_cost = &ground_cost / *ground_cost.max().unwrap();
 
-    let result = match rot::ot::lp::emd(&mut source_mass, &mut target_mass, &mut ground_cost, None, None) {
+    let result = match rot::lp::emd(&mut source_mass, &mut target_mass, &mut ground_cost, None, None) {
         Ok(result) => result,
         Err(error) => panic!("{:?}", error)
     };

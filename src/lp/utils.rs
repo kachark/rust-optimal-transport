@@ -1,5 +1,6 @@
 
-use super::OTError;
+use super::FastTransportResult;
+use crate::OTError;
 use ndarray::prelude::*;
 use anyhow::anyhow;
 
