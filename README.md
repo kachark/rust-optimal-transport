@@ -31,7 +31,7 @@ rust-optimal-transport = { git = "https://github.com/kachark/rust-optimal-transp
 * Import the library
 
 ```rust
-extern crate rust_optimal_transport as rot;
+use rust_optimal_transport as rot;
 
 use rot::lp::emd;
 use rot::utils::metrics::{dist, MetricType};

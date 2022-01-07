@@ -83,7 +83,7 @@ fn sinkhorn_integration_test() {
     let mut ground_cost = rot::utils::metrics::dist(&source, &target, rot::utils::metrics::MetricType::SqEuclidean);
     ground_cost = &ground_cost / *ground_cost.max().unwrap();
 
-    // Solve Earth Mover's Distance
+    // Solve Sinkhorn Distance
     let result = match rot::regularized::sinkhorn::sinkhorn_knopp(&mut source_mass, &mut target_mass, &mut ground_cost, gamma, None, None) {
         Ok(result) => result,
         Err(err) => panic!("{:?}", err)
@@ -136,7 +136,6 @@ fn greenkhorn_integration_test() {
     let mut ground_cost = rot::utils::metrics::dist(&source, &target, rot::utils::metrics::MetricType::SqEuclidean);
     ground_cost = &ground_cost / *ground_cost.max().unwrap();
 
-    // Solve Earth Mover's Distance
     let result = match rot::regularized::greenkhorn::greenkhorn(&mut source_mass, &mut target_mass, &mut ground_cost, gamma, None, None) {
         Ok(result) => result,
         Err(err) => panic!("{:?}", err)
@@ -190,7 +189,6 @@ fn unbalanced_sinkhorn_integration_test() {
     let mut ground_cost = rot::utils::metrics::dist(&x_reshaped, &x_reshaped, rot::utils::metrics::MetricType::SqEuclidean);
     ground_cost = &ground_cost / *ground_cost.max().unwrap();
 
-    // Solve Earth Mover's Distance
     let result = match rot::unbalanced::sinkhorn_knopp_unbalanced(&mut source_mass, &mut target_mass, &mut ground_cost, epsilon, alpha, None, None) {
         Ok(result) => result,
         Err(err) => panic!("{:?}", err)

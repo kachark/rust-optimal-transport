@@ -1,7 +1,7 @@
 
 use ndarray::prelude::*;
 use ndarray_einsum_beta::einsum;
-use ndarray_linalg::norm::{Norm, self};
+use ndarray_linalg::norm;
 
 use crate::OTError;
 
@@ -71,7 +71,7 @@ pub fn sinkhorn_knopp(
         let uprev = u.clone();
         let vprev = v.clone();
 
-        // Update u and v
+        // Update v
         let ktu = &k.t().dot(&u);
 
         // v = b/ktu
@@ -79,6 +79,7 @@ pub fn sinkhorn_knopp(
             *ele_v = b[i] / ktu[i];
         }
 
+        // Update u
         let kv = &k.dot(&v);
 
         // u = a/kv

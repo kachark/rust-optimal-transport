@@ -18,3 +18,7 @@ ndarray-rand = "0.14"
 
 [build-dependencies]
 cxx-build = "1.0"
+
+[dev-dependencies]
+pyo3 = { version = "0.15.1", features = ["auto-initialize"] }
+numpy = "0.15"
