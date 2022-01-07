@@ -10,9 +10,12 @@ fn main() {
 
     // Generate data
     let n_samples = 100;
+
+    // Mean, Covariance of the source distribution
     let mu_source = array![0., 0.];
     let cov_source = array![[1., 0.], [0., 1.]];
 
+    // Mean, Covariance of the target distribution
     let mu_target = array![4., 4.];
     let cov_target = array![[1., -0.8], [-0.8, 1.]];
 
