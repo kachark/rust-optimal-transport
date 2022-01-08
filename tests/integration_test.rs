@@ -175,7 +175,6 @@ fn unbalanced_sinkhorn_integration_test() {
         Err(err) => panic!("{:?}", err)
     };
 
-
     let mut target_mass = match rot::utils::distributions::get_1D_gauss_histogram(n, mean_target, std_target) {
         Ok(val) => val,
         Err(err) => panic!("{:?}", err)

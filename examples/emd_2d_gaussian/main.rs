@@ -3,6 +3,7 @@ use ndarray::prelude::*;
 use ndarray_stats::QuantileExt;
 
 use rust_optimal_transport as rot;
+use rot::lp::emd;
 
 mod plot;
 
@@ -23,7 +24,7 @@ fn main() {
     let source = rot::utils::distributions::sample_2D_gauss(n_samples, &mu_source, &cov_source).unwrap();
     let target = rot::utils::distributions::sample_2D_gauss(n_samples, &mu_target, &cov_target).unwrap();
 
-    // Uniform distribution on the source and target densities
+    // Uniform distribution on the source and target samples
     let mut source_mass = Array1::<f64>::from_vec(vec![1f64 / (n_samples as f64); n_samples as usize]);
     let mut target_mass = Array1::<f64>::from_vec(vec![1f64 / (n_samples as f64); n_samples as usize]);
 
@@ -35,7 +36,7 @@ fn main() {
     ground_cost = &ground_cost / *max_cost;
 
     // Compute optimal transport matrix as the Earth Mover's Distance
-    let ot_matrix = match rot::lp::emd(&mut source_mass, &mut target_mass, &mut ground_cost, None, None) {
+    let ot_matrix = match emd(&mut source_mass, &mut target_mass, &mut ground_cost, None, None) {
         Ok(result) => result,
         Err(error) => panic!("{:?}", error)
     };
