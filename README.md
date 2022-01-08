@@ -1,5 +1,7 @@
 # ROT: Rust Optimal Transport
 
+![](https://github.com/kachark/rust-optimal-transport/blob/develop/images/ot_between_samples_2d_gaussian.png)
+
 This library provides solvers for performing regularized and unregularized Optimal Transport in Rust.
 
 Heavily inspired by [Python Optimal Transport](https://pythonot.github.io), this library provides the following solvers: 
@@ -34,28 +36,43 @@ rust-optimal-transport = { git = "https://github.com/kachark/rust-optimal-transp
 use rust_optimal_transport as rot;
 
 use rot::lp::emd;
-use rot::utils::metrics::{dist, MetricType};
 ```
 
-* Compute OT matrix
+* Compute OT matrix as the Earth Mover's Distance
 
 ```rust
-// a, b are weights for source and target densities
-// M is the ground cost matrix
-
 // Generate data
-let xs = Array2::<f64>::zeros( (5, 5) );
-let xt = Array2::<f64>::from_elem( (5, 5), 5.0 );
+let n_samples = 100;
 
-// Uniform distribution on the samples
-let mut a = Array1::<f64>::from_vec(vec![1f64 / 5f64; 5]);
-let mut b = Array1::<f64>::from_vec(vec![1f64 / 5f64; 5]);
+// Mean, Covariance of the source distribution
+let mu_source = array![0., 0.];
+let cov_source = array![[1., 0.], [0., 1.]];
 
-// Compute ground cost matrix - Euclidean distance
-let mut M = dist(&xs, &xt, MetricType::Euclidean);
+// Mean, Covariance of the target distribution
+let mu_target = array![4., 4.];
+let cov_target = array![[1., -0.8], [-0.8, 1.]];
 
-// Solve Earth Mover's Distance
-let T = emd(&mut a, &mut b, &mut M, None, None)?;
+// Samples of a 2D gaussian distribution
+let source = rot::utils::distributions::sample_2D_gauss(n_samples, &mu_source, &cov_source).unwrap();
+let target = rot::utils::distributions::sample_2D_gauss(n_samples, &mu_target, &cov_target).unwrap();
+
+// Uniform distribution on the source and target samples
+let mut source_mass = Array1::<f64>::from_vec(vec![1f64 / (n_samples as f64); n_samples as usize]);
+let mut target_mass = Array1::<f64>::from_vec(vec![1f64 / (n_samples as f64); n_samples as usize]);
+
+// Compute ground cost matrix - Squared Euclidean distance
+let mut ground_cost = rot::utils::metrics::dist(&source, &target, rot::utils::metrics::MetricType::SqEuclidean);
+let max_cost = ground_cost.max().unwrap();
+
+// Normalize cost matrix for numerical stability
+ground_cost = &ground_cost / *max_cost;
+
+// Compute optimal transport matrix as the Earth Mover's Distance
+let ot_matrix = match emd(&mut source_mass, &mut target_mass, &mut ground_cost, None, None) {
+    Ok(result) => result,
+    Err(error) => panic!("{:?}", error)
+};
+
 ```
 
 ## Acknowledgements
