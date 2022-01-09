@@ -2,8 +2,8 @@
 use ndarray::prelude::*;
 use ndarray_stats::QuantileExt;
 
-use rust_optimal_transport as rot;
-use rot::lp::emd;
+use rust_optimal_transport as ot;
+use ot::lp::emd;
 
 mod plot;
 
@@ -21,15 +21,15 @@ fn main() {
     let cov_target = array![[1., -0.8], [-0.8, 1.]];
 
     // Samples of a 2D gaussian distribution
-    let source = rot::utils::distributions::sample_2D_gauss(n_samples, &mu_source, &cov_source).unwrap();
-    let target = rot::utils::distributions::sample_2D_gauss(n_samples, &mu_target, &cov_target).unwrap();
+    let source = ot::utils::distributions::sample_2D_gauss(n_samples, &mu_source, &cov_source).unwrap();
+    let target = ot::utils::distributions::sample_2D_gauss(n_samples, &mu_target, &cov_target).unwrap();
 
     // Uniform distribution on the source and target samples
     let mut source_mass = Array1::<f64>::from_vec(vec![1f64 / (n_samples as f64); n_samples as usize]);
     let mut target_mass = Array1::<f64>::from_vec(vec![1f64 / (n_samples as f64); n_samples as usize]);
 
     // Compute ground cost matrix - Squared Euclidean distance
-    let mut ground_cost = rot::utils::metrics::dist(&source, &target, rot::utils::metrics::MetricType::SqEuclidean);
+    let mut ground_cost = ot::utils::metrics::dist(&source, &target, ot::utils::metrics::MetricType::SqEuclidean);
     let max_cost = ground_cost.max().unwrap();
 
     // Normalize cost matrix for numerical stability

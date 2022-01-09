@@ -2,11 +2,14 @@
 use ndarray::{prelude::*, stack};
 use ndarray_stats::QuantileExt;
 
-use rust_optimal_transport as rot;
+use rust_optimal_transport as ot;
+use ot::regularized::sinkhorn::sinkhorn_knopp;
 
 mod plot;
 
 fn main() {
+
+    let reg = 1E-3;
 
     // Generate data
     let n_samples = 100;
@@ -18,13 +21,13 @@ fn main() {
     let mean_target = 60.0;
     let std_target = 10.0;
 
-    let mut source_mass = match rot::utils::distributions::get_1D_gauss_histogram(n_samples, mean_source, std_source) {
+    let mut source_mass = match ot::utils::distributions::get_1D_gauss_histogram(n_samples, mean_source, std_source) {
         Ok(val) => val,
         Err(err) => panic!("{:?}", err)
     };
 
 
-    let mut target_mass = match rot::utils::distributions::get_1D_gauss_histogram(n_samples, mean_target, std_target) {
+    let mut target_mass = match ot::utils::distributions::get_1D_gauss_histogram(n_samples, mean_target, std_target) {
         Ok(val) => val,
         Err(err) => panic!("{:?}", err)
     };
@@ -35,20 +38,20 @@ fn main() {
     let x_reshaped: Array2<f64> = x.into_shape((n_samples as usize, 1)).unwrap();
 
     // Compute ground cost matrix - Squared Euclidean distance
-    let mut ground_cost = rot::utils::metrics::dist(&x_reshaped, &x_reshaped, rot::utils::metrics::MetricType::SqEuclidean);
+    let mut ground_cost = ot::utils::metrics::dist(&x_reshaped, &x_reshaped, ot::utils::metrics::MetricType::SqEuclidean);
     let max_cost = ground_cost.max().unwrap();
 
     // Normalize cost matrix for numerical stability
     ground_cost = &ground_cost / *max_cost;
 
     // Compute optimal transport matrix as the Earth Mover's Distance
-    let ot_matrix = match rot::lp::emd(&mut source_mass, &mut target_mass, &mut ground_cost, None, None) {
+    let ot_matrix = match sinkhorn_knopp(&mut source_mass, &mut target_mass, &mut ground_cost, reg, None, None) {
         Ok(result) => result,
         Err(error) => panic!("{:?}", error)
     };
 
     // Plot using matplotlib
-    match plot::plot_py(&source_samples, &target_samples, &ot_matrix) {
+    match plot::plot_py(&source_samples, &target_samples, &ot_matrix, "OT matrix sinkhorn") {
         Ok(_) => (),
         Err(error) => panic!("{:?}", error)
     };

@@ -1,10 +1,10 @@
 
 use std::env;
 use ndarray::prelude::*;
-use pyo3::{prelude::*, types::PyList};
+use pyo3::{prelude::*, types::PyList, types::IntoPyDict};
 use numpy::ToPyArray;
 
-pub fn plot_py(source_samples: &Array2<f64>, target_samples: &Array2<f64>, ot_matrix: &Array2<f64>) -> PyResult<()> {
+pub fn plot_py(source_samples: &Array2<f64>, target_samples: &Array2<f64>, ot_matrix: &Array2<f64>, title: &str) -> PyResult<()> {
 
     let source_y = source_samples.slice(s![.., 1]);
     let target_y = target_samples.slice(s![.., 1]);
@@ -34,7 +34,8 @@ pub fn plot_py(source_samples: &Array2<f64>, target_samples: &Array2<f64>, ot_ma
     let ot_matrix_py = ot_matrix.to_pyarray(py);
 
     // Plot by calling into matplotlib via python script
-    plot_mod.getattr("plot1D_mat")?.call1( (source_y_py, target_y_py, ot_matrix_py) )?;
+    plt.call_method("figure", (4,), Some(vec![("figsize", (5,5))].into_py_dict(py)))?;
+    plot_mod.getattr("plot1D_mat")?.call1( (source_y_py, target_y_py, ot_matrix_py, title) )?;
 
     plt.getattr("show")?.call0()?;
 

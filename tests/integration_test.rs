@@ -1,7 +1,7 @@
 
 use ndarray::prelude::*;
 use ndarray_stats::QuantileExt;
-use rust_optimal_transport as rot;
+use rust_optimal_transport as ot;
 
 #[test]
 fn emd_integration_test() {
@@ -16,22 +16,22 @@ fn emd_integration_test() {
     let mean_target = 60.0;
     let std_target = 10.0;
 
-    let mut source_mass = match rot::utils::distributions::get_1D_gauss_histogram(n, mean_source, std_source) {
+    let mut source_mass = match ot::utils::distributions::get_1D_gauss_histogram(n, mean_source, std_source) {
         Ok(val) => val,
         Err(err) => panic!("{:?}", err)
     };
 
-    let mut target_mass = match rot::utils::distributions::get_1D_gauss_histogram(n, mean_target, std_target) {
+    let mut target_mass = match ot::utils::distributions::get_1D_gauss_histogram(n, mean_target, std_target) {
         Ok(val) => val,
         Err(err) => panic!("{:?}", err)
     };
 
     // Compute ground cost matrix - Squared Euclidean distance
     let x_reshaped: Array2<f64> = x.into_shape((n as usize, 1)).unwrap();
-    let mut ground_cost = rot::utils::metrics::dist(&x_reshaped, &x_reshaped, rot::utils::metrics::MetricType::SqEuclidean);
+    let mut ground_cost = ot::utils::metrics::dist(&x_reshaped, &x_reshaped, ot::utils::metrics::MetricType::SqEuclidean);
     ground_cost = &ground_cost / *ground_cost.max().unwrap();
 
-    let result = match rot::lp::emd(&mut source_mass, &mut target_mass, &mut ground_cost, None, None) {
+    let result = match ot::lp::emd(&mut source_mass, &mut target_mass, &mut ground_cost, None, None) {
         Ok(result) => result,
         Err(error) => panic!("{:?}", error)
     };
@@ -80,11 +80,11 @@ fn sinkhorn_integration_test() {
     let mut target_mass = Array1::<f64>::from_vec(vec![1f64 / (n as f64); n as usize]);
 
     // Compute ground cost matrix - Euclidean distance
-    let mut ground_cost = rot::utils::metrics::dist(&source, &target, rot::utils::metrics::MetricType::SqEuclidean);
+    let mut ground_cost = ot::utils::metrics::dist(&source, &target, ot::utils::metrics::MetricType::SqEuclidean);
     ground_cost = &ground_cost / *ground_cost.max().unwrap();
 
     // Solve Sinkhorn Distance
-    let result = match rot::regularized::sinkhorn::sinkhorn_knopp(&mut source_mass, &mut target_mass, &mut ground_cost, gamma, None, None) {
+    let result = match ot::regularized::sinkhorn::sinkhorn_knopp(&mut source_mass, &mut target_mass, &mut ground_cost, gamma, None, None) {
         Ok(result) => result,
         Err(err) => panic!("{:?}", err)
     };
@@ -133,10 +133,10 @@ fn greenkhorn_integration_test() {
     let mut target_mass = Array1::<f64>::from_vec(vec![1f64 / (n as f64); n as usize]);
 
     // Compute ground cost matrix - Euclidean distance
-    let mut ground_cost = rot::utils::metrics::dist(&source, &target, rot::utils::metrics::MetricType::SqEuclidean);
+    let mut ground_cost = ot::utils::metrics::dist(&source, &target, ot::utils::metrics::MetricType::SqEuclidean);
     ground_cost = &ground_cost / *ground_cost.max().unwrap();
 
-    let result = match rot::regularized::greenkhorn::greenkhorn(&mut source_mass, &mut target_mass, &mut ground_cost, gamma, None, None) {
+    let result = match ot::regularized::greenkhorn::greenkhorn(&mut source_mass, &mut target_mass, &mut ground_cost, gamma, None, None) {
         Ok(result) => result,
         Err(err) => panic!("{:?}", err)
     };
@@ -170,12 +170,12 @@ fn unbalanced_sinkhorn_integration_test() {
     let mean_target = 60.0;
     let std_target = 10.0;
 
-    let mut source_mass = match rot::utils::distributions::get_1D_gauss_histogram(n, mean_source, std_source) {
+    let mut source_mass = match ot::utils::distributions::get_1D_gauss_histogram(n, mean_source, std_source) {
         Ok(val) => val,
         Err(err) => panic!("{:?}", err)
     };
 
-    let mut target_mass = match rot::utils::distributions::get_1D_gauss_histogram(n, mean_target, std_target) {
+    let mut target_mass = match ot::utils::distributions::get_1D_gauss_histogram(n, mean_target, std_target) {
         Ok(val) => val,
         Err(err) => panic!("{:?}", err)
     };
@@ -185,10 +185,10 @@ fn unbalanced_sinkhorn_integration_test() {
 
     // Compute ground cost matrix - Squared Euclidean distance
     let x_reshaped: Array2<f64> = x.into_shape((n as usize, 1)).unwrap();
-    let mut ground_cost = rot::utils::metrics::dist(&x_reshaped, &x_reshaped, rot::utils::metrics::MetricType::SqEuclidean);
+    let mut ground_cost = ot::utils::metrics::dist(&x_reshaped, &x_reshaped, ot::utils::metrics::MetricType::SqEuclidean);
     ground_cost = &ground_cost / *ground_cost.max().unwrap();
 
-    let result = match rot::unbalanced::sinkhorn_knopp_unbalanced(&mut source_mass, &mut target_mass, &mut ground_cost, epsilon, alpha, None, None) {
+    let result = match ot::unbalanced::sinkhorn_knopp_unbalanced(&mut source_mass, &mut target_mass, &mut ground_cost, epsilon, alpha, None, None) {
         Ok(result) => result,
         Err(err) => panic!("{:?}", err)
     };
