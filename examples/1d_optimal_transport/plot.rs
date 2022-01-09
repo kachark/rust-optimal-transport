@@ -1,15 +1,12 @@
 
 use std::env;
 use ndarray::prelude::*;
-use pyo3::{prelude::*, types::IntoPyDict, types::PyList};
+use pyo3::{prelude::*, types::PyList};
 use numpy::ToPyArray;
 
 pub fn plot_py(source_samples: &Array2<f64>, target_samples: &Array2<f64>, ot_matrix: &Array2<f64>) -> PyResult<()> {
 
-    let source_x = source_samples.slice(s![.., 0]);
     let source_y = source_samples.slice(s![.., 1]);
-
-    let target_x = target_samples.slice(s![.., 0]);
     let target_y = target_samples.slice(s![.., 1]);
 
     // Start the python interpreter
@@ -23,7 +20,7 @@ pub fn plot_py(source_samples: &Array2<f64>, target_samples: &Array2<f64>, ot_ma
     let pwd = env::current_dir()?;
     let syspath: &PyList = py.import("sys")
         .unwrap()
-        .get("path")
+        .getattr("path")
         .unwrap()
         .try_into()
         .unwrap();
@@ -32,17 +29,12 @@ pub fn plot_py(source_samples: &Array2<f64>, target_samples: &Array2<f64>, ot_ma
     let plot_mod = py.import("plot_1d_mat")?;
 
     // Translate to numpy array
-    let source_x_py = source_x.to_pyarray(py);
     let source_y_py = source_y.to_pyarray(py);
-
-    let target_x_py = target_x.to_pyarray(py);
     let target_y_py = target_y.to_pyarray(py);
-
     let ot_matrix_py = ot_matrix.to_pyarray(py);
 
-    // Plot by calling into matplotlib
-
-    plot_mod.call1("plot1D_mat", (source_y_py, target_y_py, ot_matrix_py))?;
+    // Plot by calling into matplotlib via python script
+    plot_mod.getattr("plot1D_mat")?.call1( (source_y_py, target_y_py, ot_matrix_py) )?;
 
     plt.getattr("show")?.call0()?;
 
