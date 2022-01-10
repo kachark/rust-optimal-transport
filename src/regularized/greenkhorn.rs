@@ -10,8 +10,8 @@ use crate::OTError;
 /// Near-linear time approximation algorithms for optimal transport via Sinkhorn iteration
 /// by Jason Altschuler, Jonathan Weed, Philippe Rigollet
 ///
-/// a: Unnormalized histogram of dimension dim_a
-/// b: Unnormalized histogram of dimension dim_b
+/// a: Source sample weights (defaults to uniform weight if empty)
+/// b: Target sample weights (defaults to uniform weight if empty)
 /// M: Loss matrix
 /// reg: Entropy regularization term > 0
 /// num_iter_max: Max number of iterations (default = 1000)
@@ -55,7 +55,7 @@ pub fn greenkhorn(
 
     // Check dimensions
     if dim_a != m0 || dim_b != m1 {
-        return Err( OTError::DimensionError{ dim_a, dim_b, dim_m_0: m0, dim_m_1: m1 } )
+        return Err( OTError::WeightDimensionError{ dim_a, dim_b, dim_m_0: m0, dim_m_1: m1 } )
     }
 
     // TODO: same mass can be lost by summing with machine precision

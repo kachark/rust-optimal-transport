@@ -15,9 +15,8 @@ enum FastTransportResult {
     MaxIterReached=3
 }
 
-/// Solves the Earth Movers distance problem and returns the OT matrix
-/// a: Source histogram (uniform weight if empty)
-/// b: Target histogram (uniform weight if empty)
+/// a: Source sample weights (defaults to uniform weight if empty)
+/// b: Target sample weights (defaults to uniform weight if empty)
 /// M: Loss matrix (row-major)
 /// num_iter_max: maximum number of iterations before stopping the optimization algorithm if it has
 /// not converged (default = 100000)
@@ -61,7 +60,7 @@ pub fn emd(a: &mut Array1<f64>, b: &mut Array1<f64>,
 
     // Check dimensions
     if dim_a != m0 || dim_b != m1 {
-        return Err( OTError::DimensionError{ dim_a, dim_b, dim_m_0: m0, dim_m_1: m1 } )
+        return Err( OTError::WeightDimensionError{ dim_a, dim_b, dim_m_0: m0, dim_m_1: m1 } )
     }
 
     // TODO: same mass can be lost by summing with machine precision

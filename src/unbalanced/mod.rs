@@ -1,14 +1,14 @@
 
 use ndarray::prelude::*;
 use ndarray_einsum_beta::einsum;
-use ndarray_linalg::norm::{Norm, self};
+use ndarray_linalg::norm::Norm;
 
 use crate::OTError;
 
 /// Solves the unbalanced entropic regularization optimal transport problem and return the OT
 /// matrix
-/// a: Unnormalized histogram of dimension dim_a
-/// b: Unnormalized histogram of dimension dim_b
+/// a: Source sample weights (defaults to uniform weight if empty)
+/// b: Target sample weights (defaults to uniform weight if empty)
 /// M: Loss matrix
 /// reg: Entropy regularization term > 0
 /// reg_m: Marginal relaxation term > 0
@@ -53,7 +53,7 @@ pub fn sinkhorn_knopp_unbalanced(
 
     // Check dimensions
     if dim_a != m0 || dim_b != m1 {
-        return Err( OTError::DimensionError{ dim_a, dim_b, dim_m_0: m0, dim_m_1: m1 } )
+        return Err( OTError::WeightDimensionError{ dim_a, dim_b, dim_m_0: m0, dim_m_1: m1 } )
     }
 
     // we assume that no distances are null except those of the diagonal distances
@@ -126,7 +126,7 @@ pub fn sinkhorn_knopp_unbalanced(
 
             let mut tmp = einsum("i,ij,j->j", &[&u,&k,&v]).unwrap();
             tmp -= &b.clone();
-            let err = norm::Norm::norm(&tmp);
+            let err = Norm::norm(&tmp);
             if err < stop {
                 break;
             }
