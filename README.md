@@ -18,12 +18,11 @@ The library has been tested on macOS. It requires a C++ compiler for building th
 - ndarray 0.15
 
 #### Cargo installation
-Edit your Cargo.toml with the following to add ROT as a dependency for your project (uses git url pending publishing on Cargo)
-NOTE: Update to the latest commit with ```cargo update```.
+Edit your Cargo.toml with the following to use rust-optimal-transport in your project.
 
 ```toml
 [dependencies]
-rust-optimal-transport = { git = "https://github.com/kachark/rust-optimal-transport", branch = "main" }
+rust-optimal-transport = "0.1.0"
 ```
 
 ## Examples
