@@ -22,7 +22,7 @@ Edit your Cargo.toml with the following to use rust-optimal-transport in your pr
 
 ```toml
 [dependencies]
-rust-optimal-transport = "0.1.0"
+rust-optimal-transport = "0.1"
 ```
 
 ## Examples
