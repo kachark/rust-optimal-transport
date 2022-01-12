@@ -4,6 +4,10 @@ version = "0.1.0"
 authors = ["kachark <kkachar@hotmail.com>"]
 edition = "2018"
 repository = "https://github.com/kachark/rust-optimal-transport"
+exclude = [
+  "assets/*",
+  ".github/*",
+]
 
 readme = "README.md"
 license = "MIT"

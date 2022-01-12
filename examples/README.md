@@ -14,4 +14,4 @@ pip install matplotlib
 NOTE: sinkhorn_1D example must be run from sinkhorn_1D directory in order to use the included
 python script for visualization. See below:
 
-![](https://github.com/kachark/rust-optimal-transport/blob/main/images/sinkhorn_1D_gaussian.png)
+![](https://github.com/kachark/rust-optimal-transport/blob/main/assets/sinkhorn_1D_gaussian.png)

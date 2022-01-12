@@ -1,6 +1,6 @@
 # ROT: Rust Optimal Transport
 
-![](https://github.com/kachark/rust-optimal-transport/blob/main/images/ot_between_samples_2d_gaussian.png)
+![](https://github.com/kachark/rust-optimal-transport/blob/main/assets/ot_between_samples_2d_gaussian.png)
 
 This library provides solvers for performing regularized and unregularized Optimal Transport in Rust.
 
