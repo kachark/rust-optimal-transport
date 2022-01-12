@@ -3,13 +3,20 @@ name = "rust-optimal-transport"
 version = "0.1.0"
 authors = ["kachark <kkachar@hotmail.com>"]
 edition = "2018"
+repository = "https://github.com/kachark/rust-optimal-transport"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+readme = "README.md"
+license = "MIT"
+
+description = "A library of optimal transport solvers for Rust"
+keywords = ["optimal-transport", "ot", "machine-learning", "optimization", "ai"]
+categories = ["algorithms", "mathematics", "science"]
 
 [dependencies]
 cxx = "1.0"
 thiserror = "1.0"
 anyhow = "1.0"
+num = "0.4.0"
 ndarray = "0.15.4"
 ndarray_einsum_beta = "0.7.0"
 ndarray-linalg = { version = "0.14", features = ["openblas-system"] }
@@ -22,3 +29,9 @@ cxx-build = "1.0"
 [dev-dependencies]
 pyo3 = { version = "0.15.1", features = ["auto-initialize"] }
 numpy = "0.15"
+
+[[example]]
+name = "emd_2D"
+
+[[example]]
+name = "sinkhorn_1D"
