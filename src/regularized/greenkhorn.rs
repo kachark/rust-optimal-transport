@@ -1,7 +1,6 @@
-
+use anyhow::anyhow;
 use ndarray::prelude::*;
 use ndarray_stats::QuantileExt;
-use anyhow::anyhow;
 
 use crate::OTError;
 
@@ -17,9 +16,13 @@ use crate::OTError;
 /// num_iter_max: Max number of iterations (default = 1000)
 /// stop_threshold: Stop threshold on error (> 0) (default = 1E-6)
 pub fn greenkhorn(
-    a: &mut Array1<f64>, b: &mut Array1<f64>, M: &mut Array2<f64>,
-    reg: f64, num_iter_max: Option<i32>, stop_threshold: Option<f64>) -> Result<Array2<f64>, OTError>{
-
+    a: &mut Array1<f64>,
+    b: &mut Array1<f64>,
+    M: &mut Array2<f64>,
+    reg: f64,
+    num_iter_max: Option<i32>,
+    stop_threshold: Option<f64>,
+) -> Result<Array2<f64>, OTError> {
     // Defaults
     let mut iterations = 1000;
     if let Some(val) = num_iter_max {
@@ -55,7 +58,12 @@ pub fn greenkhorn(
 
     // Check dimensions
     if dim_a != m0 || dim_b != m1 {
-        return Err( OTError::WeightDimensionError{ dim_a, dim_b, dim_m_0: m0, dim_m_1: m1 } )
+        return Err(OTError::WeightDimensionError {
+            dim_a,
+            dim_b,
+            dim_m_0: m0,
+            dim_m_1: m1,
+        });
     }
 
     // TODO: same mass can be lost by summing with machine precision
@@ -68,24 +76,27 @@ pub fn greenkhorn(
     let mut v = Array1::<f64>::from_vec(vec![1f64 / (dim_b as f64); dim_b]);
 
     // K = exp(-M/reg)
-    let k = Array2::from_shape_fn( (mshape[0], mshape[1]), |(i, j)| (-M[[i,j]] / reg).exp() );
+    let k = Array2::from_shape_fn((mshape[0], mshape[1]), |(i, j)| (-M[[i, j]] / reg).exp());
 
     let mut G = &u.diag().t() * &k * &v.diag();
 
     // G.sum(1) - a
-    let mut viol: Array1<f64> = G.sum_axis(Axis(1)).iter()
+    let mut viol: Array1<f64> = G
+        .sum_axis(Axis(1))
+        .iter()
         .enumerate()
         .map(|(i, sum_i)| sum_i - a[i])
         .collect();
 
     // G.sum(0) - b
-    let mut viol_2: Array1<f64> = G.sum_axis(Axis(0)).iter()
+    let mut viol_2: Array1<f64> = G
+        .sum_axis(Axis(0))
+        .iter()
         .enumerate()
         .map(|(i, sum_i)| sum_i - b[i])
         .collect();
 
     for _ in 0..iterations {
-
         // Absolute values
         let viol_abs: Array1<f64> = viol.iter().map(|x| x.abs()).collect();
         let viol_2_abs: Array1<f64> = viol_2.iter().map(|x| x.abs()).collect();
@@ -94,13 +105,13 @@ pub fn greenkhorn(
         let i_1 = match viol_abs.argmax() {
             Ok(val) => val,
             // Propagate ndarray-stats error
-            Err(err) => return Err( OTError::Other(anyhow!(err)) )
+            Err(err) => return Err(OTError::Other(anyhow!(err))),
         };
 
         let i_2 = match viol_2_abs.argmax() {
             Ok(val) => val,
             // Propagate ndarray-stats error
-            Err(err) => return Err( OTError::Other(anyhow!(err)) )
+            Err(err) => return Err(OTError::Other(anyhow!(err))),
         };
 
         // Max value
@@ -114,7 +125,6 @@ pub fn greenkhorn(
         }
 
         if m_viol_1 > m_viol_2 {
-
             let old_u = u[i_1];
             let k_i1 = &k.row(i_1);
             let denom = k_i1.dot(&v);
@@ -122,7 +132,6 @@ pub fn greenkhorn(
 
             // G[i_1, :] = new_u * k[i_1, :] * v
             for (i, mut row) in G.axis_iter_mut(Axis(0)).enumerate() {
-
                 if i != i_1 {
                     continue;
                 }
@@ -130,7 +139,6 @@ pub fn greenkhorn(
                 for (j, g) in row.iter_mut().enumerate() {
                     *g = new_u * k[(i_1, j)] * v[j];
                 }
-
             }
 
             // let tmp = k_i1.iter().map(|x| new_u*x).collect();
@@ -142,9 +150,7 @@ pub fn greenkhorn(
             }
 
             u[i_1] = new_u;
-
         } else {
-
             let old_v = v[i_2];
             let k_i2 = &k.column(i_2);
             let denom = k_i2.dot(&u);
@@ -152,7 +158,6 @@ pub fn greenkhorn(
 
             // G[:, i_2] = u * k[:, i_2] * new_v
             for (i, mut col) in G.axis_iter_mut(Axis(1)).enumerate() {
-
                 if i != i_2 {
                     continue;
                 }
@@ -160,7 +165,6 @@ pub fn greenkhorn(
                 for (j, g) in col.iter_mut().enumerate() {
                     *g = u[j] * k[(j, i_2)] * new_v;
                 }
-
             }
 
             // viol += (-old_v + v[i_2]) * K[:, i_2] * u
@@ -171,17 +175,14 @@ pub fn greenkhorn(
             viol_2[i_2] = new_v * k_i2.dot(&u) - b[i_2];
 
             v[i_2] = new_v;
-
         }
 
         if stop_val <= stop {
             break;
         }
-
     }
 
     Ok(G)
-
 }
 
 #[cfg(test)]
@@ -191,7 +192,6 @@ mod tests {
 
     #[test]
     fn test_greenkhorn() {
-
         let mut a = array![0.5, 0.5];
         let mut b = array![0.5, 0.5];
         let reg = 1.0;
@@ -199,7 +199,7 @@ mod tests {
 
         let result = match super::greenkhorn(&mut a, &mut b, &mut m, reg, None, None) {
             Ok(result) => result,
-            Err(error) => panic!("{:?}", error)
+            Err(error) => panic!("{:?}", error),
         };
 
         println!("{:?}", result);
@@ -207,8 +207,5 @@ mod tests {
         let truth = array![[0.36552929, 0.13447071], [0.13447071, 0.36552929]];
 
         assert!(result.relative_eq(&truth, 1E-6, 1E-2));
-
     }
-
 }
-

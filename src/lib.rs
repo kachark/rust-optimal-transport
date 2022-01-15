@@ -1,5 +1,3 @@
-
-
 /*
  *  Original Python/C++ implementation written by:
  *
@@ -15,23 +13,24 @@
  *
 */
 
-
 use thiserror::Error;
 
 pub mod lp;
 pub mod regularized;
 pub mod unbalanced;
 pub mod utils;
+pub mod metrics;
 
 #[derive(Error, Debug)]
 pub enum OTError {
-
-    #[error("Sample weight dimensions, source distribution {dim_a:?} and target distribution {dim_b:?}, do not match loss matrix dimensions, ({dim_m_0:?}, {dim_m_1:?})")]
+    #[error("Sample weight dimensions, source distribution \
+            {dim_a:?} and target distribution {dim_b:?}, do \
+            not match loss matrix dimensions, ({dim_m_0:?}, {dim_m_1:?})")]
     WeightDimensionError {
         dim_a: usize,
         dim_b: usize,
         dim_m_0: usize,
-        dim_m_1: usize
+        dim_m_1: usize,
     },
 
     // #[error("Histogram weights do not sum to zero")]
@@ -39,7 +38,6 @@ pub enum OTError {
     //     mass_a: f64,
     //     mass_b: f64
     // },
-
     #[error("Fast transport failed: '{0}'")]
     FastTransportError(String),
 
@@ -48,6 +46,4 @@ pub enum OTError {
 
     #[error(transparent)]
     Other(#[from] anyhow::Error),
-
 }
-

@@ -1,14 +1,12 @@
-
 use ndarray::prelude::*;
 use ndarray_stats::QuantileExt;
 
-use rust_optimal_transport as ot;
 use ot::lp::emd;
+use rust_optimal_transport as ot;
 
 mod plot;
 
 fn main() {
-
     // Generate data
     let n_samples = 100;
 
@@ -21,30 +19,43 @@ fn main() {
     let cov_target = array![[1., -0.8], [-0.8, 1.]];
 
     // Samples of a 2D gaussian distribution
-    let source = ot::utils::distributions::sample_2D_gauss(n_samples, &mu_source, &cov_source).unwrap();
-    let target = ot::utils::distributions::sample_2D_gauss(n_samples, &mu_target, &cov_target).unwrap();
+    let source =
+        ot::utils::sample_2D_gauss(n_samples, &mu_source, &cov_source).unwrap();
+    let target =
+        ot::utils::sample_2D_gauss(n_samples, &mu_target, &cov_target).unwrap();
 
     // Uniform distribution on the source and target samples
-    let mut source_mass = Array1::<f64>::from_vec(vec![1f64 / (n_samples as f64); n_samples as usize]);
-    let mut target_mass = Array1::<f64>::from_vec(vec![1f64 / (n_samples as f64); n_samples as usize]);
+    let mut source_mass =
+        Array1::<f64>::from_vec(vec![1f64 / (n_samples as f64); n_samples as usize]);
+    let mut target_mass =
+        Array1::<f64>::from_vec(vec![1f64 / (n_samples as f64); n_samples as usize]);
 
     // Compute ground cost matrix - Squared Euclidean distance
-    let mut ground_cost = ot::utils::metrics::dist(&source, &target, ot::utils::metrics::MetricType::SqEuclidean);
+    let mut ground_cost = ot::metrics::dist(
+        &source,
+        &target,
+        ot::metrics::MetricType::SqEuclidean,
+    );
     let max_cost = ground_cost.max().unwrap();
 
     // Normalize cost matrix for numerical stability
     ground_cost = &ground_cost / *max_cost;
 
     // Compute optimal transport matrix as the Earth Mover's Distance
-    let ot_matrix = match emd(&mut source_mass, &mut target_mass, &mut ground_cost, None, None) {
+    let ot_matrix = match emd(
+        &mut source_mass,
+        &mut target_mass,
+        &mut ground_cost,
+        None,
+        None,
+    ) {
         Ok(result) => result,
-        Err(error) => panic!("{:?}", error)
+        Err(error) => panic!("{:?}", error),
     };
 
     // Plot using matplotlib
     match plot::plot_py(&source, &target, &ot_matrix) {
         Ok(_) => (),
-        Err(error) => panic!("{:?}", error)
+        Err(error) => panic!("{:?}", error),
     };
-
 }

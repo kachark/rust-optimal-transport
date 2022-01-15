@@ -1,4 +1,3 @@
-
 use ndarray::prelude::*;
 use ndarray_einsum_beta::einsum;
 use ndarray_linalg::norm;
@@ -13,9 +12,13 @@ use crate::OTError;
 /// num_iter_max: Max number of iterations (default = 1000)
 /// stop_threshold: Stop threshold on error (> 0) (default = 1E-6)
 pub fn sinkhorn_knopp(
-    a: &mut Array1<f64>, b: &mut Array1<f64>, M: &mut Array2<f64>,
-    reg: f64, num_iter_max: Option<i32>, stop_threshold: Option<f64>) -> Result<Array2<f64>, OTError> {
-
+    a: &mut Array1<f64>,
+    b: &mut Array1<f64>,
+    M: &mut Array2<f64>,
+    reg: f64,
+    num_iter_max: Option<i32>,
+    stop_threshold: Option<f64>,
+) -> Result<Array2<f64>, OTError> {
     // Defaults
     let mut iterations = 1000;
     if let Some(val) = num_iter_max {
@@ -50,7 +53,12 @@ pub fn sinkhorn_knopp(
 
     // Check dimensions
     if dim_a != m0 || dim_b != m1 {
-        return Err( OTError::WeightDimensionError{ dim_a, dim_b, dim_m_0: m0, dim_m_1: m1 } )
+        return Err(OTError::WeightDimensionError {
+            dim_a,
+            dim_b,
+            dim_m_0: m0,
+            dim_m_1: m1,
+        });
     }
 
     // TODO: same mass can be lost by summing with machine precision
@@ -64,10 +72,11 @@ pub fn sinkhorn_knopp(
     let mut v = Array1::<f64>::from_vec(vec![1f64 / (dim_b as f64); dim_b]);
 
     // K = exp(-M/reg)
-    let mut k = Array2::from_shape_fn( (mshape[0], mshape[1]), |(i, j)| (-M[[i,j]] / reg).exp() );
+    let mut k = Array2::from_shape_fn((mshape[0], mshape[1]), |(i, j)| (-M[[i, j]] / reg).exp());
 
     for count in 0..iterations {
-
+        // TODO: don't clone in sinkhorn loop
+        // how to do this iteration without cloning?
         let uprev = u.clone();
         let vprev = v.clone();
 
@@ -94,6 +103,10 @@ pub fn sinkhorn_knopp(
         let mut v_nan_flag = false;
         let mut v_inf_flag = false;
 
+        // TODO: put these into separate functions
+        // all() check if all values in array evaluate to logical True
+        // is_nan() check if any elements have NaN
+        // is_inf() check if any elements are inf
         for ele in ktu.iter() {
             if *ele == 0f64 {
                 ktu_0_flag = true;
@@ -120,25 +133,26 @@ pub fn sinkhorn_knopp(
             }
         }
 
-        // Check stop conditions
-        if ktu_0_flag == true || u_nan_flag == true || u_inf_flag == true
-            || v_nan_flag == true || v_inf_flag == true {
+        // If solution is unusable, use previous values for u and v
+        if ktu_0_flag == true
+            || u_nan_flag == true
+            || u_inf_flag == true
+            || v_nan_flag == true
+            || v_inf_flag == true
+        {
             u = uprev;
             v = vprev;
             break;
         }
 
         if count % 10 == 0 {
-
-            let mut tmp = einsum("i,ij,j->j", &[&u,&k,&v]).unwrap();
+            let mut tmp = einsum("i,ij,j->j", &[&u, &k, &v]).unwrap();
             tmp -= &b.clone();
             let err = norm::Norm::norm(&tmp);
             if err < stop {
                 break;
             }
-
         }
-
     }
 
     // diag(u)*K*diag(v)
@@ -149,7 +163,6 @@ pub fn sinkhorn_knopp(
     }
 
     Ok(k)
-
 }
 
 #[cfg(test)]
@@ -159,7 +172,6 @@ mod tests {
 
     #[test]
     fn test_sinkhorn_knopp() {
-
         let mut a = array![0.5, 0.5];
         let mut b = array![0.5, 0.5];
         let reg = 1.0;
@@ -167,15 +179,11 @@ mod tests {
 
         let result = match super::sinkhorn_knopp(&mut a, &mut b, &mut m, reg, None, None) {
             Ok(result) => result,
-            Err(error) => panic!("{:?}", error)
+            Err(error) => panic!("{:?}", error),
         };
 
         let truth = array![[0.36552929, 0.13447071], [0.13447071, 0.36552929]];
 
         assert!(result.relative_eq(&truth, 1E-6, 1E-2));
-
     }
-
-
-
 }
