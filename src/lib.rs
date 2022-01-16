@@ -20,6 +20,7 @@ pub mod regularized;
 pub mod unbalanced;
 pub mod utils;
 pub mod metrics;
+pub mod ndarray_logical;
 
 #[derive(Error, Debug)]
 pub enum OTError {
