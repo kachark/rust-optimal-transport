@@ -1,6 +1,7 @@
 use ndarray::prelude::*;
 use ndarray_einsum_beta::einsum;
 use ndarray_linalg::norm;
+use crate::ndarray_logical;
 
 use crate::OTError;
 
@@ -97,44 +98,14 @@ pub fn sinkhorn_knopp(
         }
 
         // Check stop conditions
-        let mut ktu_0_flag = false;
-        let mut u_nan_flag = false;
-        let mut u_inf_flag = false;
-        let mut v_nan_flag = false;
-        let mut v_inf_flag = false;
-
-        // TODO: put these into separate functions
-        // all() check if all values in array evaluate to logical True
-        // is_nan() check if any elements have NaN
-        // is_inf() check if any elements are inf
-        for ele in ktu.iter() {
-            if *ele == 0f64 {
-                ktu_0_flag = true;
-            }
-        }
-
-        for ele in u.iter() {
-            if (*ele).is_nan() {
-                u_nan_flag = true;
-            }
-
-            if (*ele).is_infinite() {
-                u_inf_flag = true;
-            }
-        }
-
-        for ele in v.iter() {
-            if (*ele).is_nan() {
-                v_nan_flag = true;
-            }
-
-            if (*ele).is_infinite() {
-                v_inf_flag = true;
-            }
-        }
+        let ktu_false_flag = !ndarray_logical::all(&ktu);
+        let u_nan_flag = ndarray_logical::is_nan(&u);
+        let u_inf_flag = ndarray_logical::is_inf(&u);
+        let v_nan_flag = ndarray_logical::is_nan(&v);
+        let v_inf_flag = ndarray_logical::is_inf(&v);
 
         // If solution is unusable, use previous values for u and v
-        if ktu_0_flag == true
+        if ktu_false_flag == true
             || u_nan_flag == true
             || u_inf_flag == true
             || v_nan_flag == true

@@ -37,9 +37,63 @@ fn check_axis(axis: Axis, shape: &[usize]) -> Result<(), LogicalError> {
 }
 
 
+/// Returns True if all array elements are neither zero, 
+/// infinite, subnormal, or NaN. Subnormal values are those 
+/// between '0' and f32 or f64::MIN_POSITIVE
+/// Returns False otherwise
+pub fn all<S, D, A>(arr: &ArrayBase<S, D>) -> bool
+where
+    A: Float,
+    S: Data<Elem = A>,
+    D: Dimension,
+{
+
+    let result: bool = arr.iter().all(|ele| ele.is_normal() );
+
+    result
+
+}
+
+
+/// Tests whether all array elements along a given axis evaluates to True
+///
+/// Returns an array of booleans
+///
+/// Example:
+///
+/// ```rust
+///
+/// use rust_optimal_transport as rot;
+/// use rot::ndarray_logical::axis_all;
+/// use ndarray::{prelude::*, Axis};
+///
+/// let arr = array![[f32::INFINITY, 42.], [2., 11.]];
+/// assert_eq!(axis_all(&arr, Axis(0)).unwrap(), array![false, true]);
+/// ```
+///
+pub fn axis_all<S, D, A>(arr: &ArrayBase<S, D>, axis: Axis) -> Result<Array1<bool>, LogicalError>
+where
+    A: Float,
+    S: Data<Elem = A>,
+    D: Dimension + RemoveAxis,
+{
+
+    check_axis(axis, arr.shape())?;
+
+    let result: Array1<bool> = arr.axis_iter(axis)
+        .map(|axis_view| self::all(&axis_view))
+        .collect();
+
+    Ok(result)
+
+}
+
+
+
+
 /// Tests whether any array element evaluates to True
-/// Returns true if the number is neither zero, infinite, subnormal, or NaN
-/// subnormal are values between '0' and 'f32/f64::MIN_POSITIVE'
+/// Returns true if the number is neither zero, infinite, subnormal, or NaN.
+/// Subnormal values are those between '0' and 'f32 or f64::MIN_POSITIVE'
 /// Returns false for empty arrays
 pub fn any<S, D, A>(arr: &ArrayBase<S, D>) -> bool
 where
@@ -193,9 +247,8 @@ where
 #[cfg(test)]
 mod tests {
 
-    use super::{is_inf, is_nan, any, axis_any, axis_is_nan, axis_is_inf};
+    use super::{is_inf, is_nan, any, axis_all, axis_any, axis_is_nan, axis_is_inf};
     use ndarray::{array, Axis};
-    use std::f64;
     use num::Float;
 
     #[test]
@@ -222,6 +275,14 @@ mod tests {
         let arr = array![1., 2., Float::infinity()];
 
         assert_eq!(any(&arr), true);
+
+    }
+
+    #[test]
+    fn test_axis_all() {
+
+        let arr = array![[f32::INFINITY, 42.], [2., 11.]];
+        assert_eq!(axis_all(&arr, Axis(0)).unwrap(), array![false, true]);
 
     }
 
