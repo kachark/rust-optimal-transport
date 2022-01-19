@@ -1,7 +1,7 @@
 use std::usize;
 
 use thiserror::Error;
-use num::Float;
+use num_traits::Float;
 use ndarray::{prelude::*, RemoveAxis};
 use ndarray::{Axis, Data};
 

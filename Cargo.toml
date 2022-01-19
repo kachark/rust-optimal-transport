@@ -20,7 +20,7 @@ categories = ["algorithms", "mathematics", "science"]
 cxx = "1.0"
 thiserror = "1.0"
 anyhow = "1.0"
-num = "0.4.0"
+num-traits = "0.2"
 ndarray = "0.15.4"
 ndarray_einsum_beta = "0.7.0"
 ndarray-linalg = { version = "0.14", features = ["openblas-system"] }
