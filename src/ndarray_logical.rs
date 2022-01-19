@@ -249,7 +249,7 @@ mod tests {
 
     use super::{is_inf, is_nan, any, axis_all, axis_any, axis_is_nan, axis_is_inf};
     use ndarray::{array, Axis};
-    use num::Float;
+    use num_traits::Float;
 
     #[test]
     fn test_is_nan() {
