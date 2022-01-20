@@ -76,7 +76,6 @@ pub fn emd(
     //     return Err( OTError::HistogramSumError{ mass_a: a.sum(), mass_b: b.sum() } )
     // }
 
-    // b = b * a.sum/b.sum
     *b *= a.sum() / b.sum();
 
     // not_asel == ~asel, not_bsel == ~bsel

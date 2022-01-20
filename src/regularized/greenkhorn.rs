@@ -18,7 +18,7 @@ use crate::OTError;
 pub fn greenkhorn(
     a: &mut Array1<f64>,
     b: &mut Array1<f64>,
-    M: &mut Array2<f64>,
+    M: &Array2<f64>,
     reg: f64,
     num_iter_max: Option<i32>,
     stop_threshold: Option<f64>,

@@ -15,11 +15,15 @@ use crate::OTError;
 pub fn sinkhorn_knopp(
     a: &mut Array1<f64>,
     b: &mut Array1<f64>,
-    M: &mut Array2<f64>,
+    M: &Array2<f64>,
     reg: f64,
     num_iter_max: Option<i32>,
     stop_threshold: Option<f64>,
 ) -> Result<Array2<f64>, OTError> {
+
+    // TODO: check for NaN, inf, etc.
+    // TODO: why do a, b, M need to be mutable references?
+
     // Defaults
     let mut iterations = 1000;
     if let Some(val) = num_iter_max {
