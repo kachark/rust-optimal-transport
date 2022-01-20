@@ -1,5 +1,3 @@
-
-
 use ndarray::prelude::*;
 use ndarray_einsum_beta::*;
 
@@ -128,5 +126,3 @@ mod tests {
         assert_eq!(M, truth);
     }
 }
-
-

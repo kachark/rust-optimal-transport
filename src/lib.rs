@@ -16,17 +16,19 @@
 use thiserror::Error;
 
 pub mod lp;
+pub mod metrics;
+pub mod ndarray_logical;
 pub mod regularized;
 pub mod unbalanced;
 pub mod utils;
-pub mod metrics;
-pub mod ndarray_logical;
 
 #[derive(Error, Debug)]
 pub enum OTError {
-    #[error("Sample weight dimensions, source distribution \
+    #[error(
+        "Sample weight dimensions, source distribution \
             {dim_a:?} and target distribution {dim_b:?}, do \
-            not match loss matrix dimensions, ({dim_m_0:?}, {dim_m_1:?})")]
+            not match loss matrix dimensions, ({dim_m_0:?}, {dim_m_1:?})"
+    )]
     WeightDimensionError {
         dim_a: usize,
         dim_b: usize,

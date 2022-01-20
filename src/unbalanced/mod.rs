@@ -1,7 +1,7 @@
+use crate::ndarray_logical;
 use ndarray::prelude::*;
 use ndarray_einsum_beta::einsum;
 use ndarray_linalg::norm::Norm;
-use crate::ndarray_logical;
 
 use crate::OTError;
 
@@ -98,12 +98,7 @@ pub fn sinkhorn_knopp_unbalanced(
         let v_inf_flag = ndarray_logical::is_inf(&v);
 
         // If solution is unusable, use previous values for u and v
-        if ktu_false_flag == true
-            || u_nan_flag == true
-            || u_inf_flag == true
-            || v_nan_flag == true
-            || v_inf_flag == true
-        {
+        if ktu_false_flag || u_nan_flag || u_inf_flag || v_nan_flag || v_inf_flag {
             u = uprev;
             v = vprev;
             break;

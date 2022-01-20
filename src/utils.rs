@@ -1,4 +1,3 @@
-
 use ndarray::prelude::*;
 use ndarray_linalg::cholesky::*;
 use ndarray_rand::rand::{thread_rng, Rng};
@@ -89,7 +88,6 @@ pub fn sample_2D_gauss(
     Ok(mean + samples.dot(&lower))
 }
 
-
 #[cfg(test)]
 mod tests {
 
@@ -124,5 +122,4 @@ mod tests {
         // TODO: assert correctness of sample_2D_gauss()
         // println!("{:?}", result);
     }
-
 }

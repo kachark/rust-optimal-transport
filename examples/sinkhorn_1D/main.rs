@@ -19,23 +19,17 @@ fn main() {
     let mean_target = 60.0;
     let std_target = 10.0;
 
-    let mut source_mass = match ot::utils::get_1D_gauss_histogram(
-        n_samples,
-        mean_source,
-        std_source,
-    ) {
-        Ok(val) => val,
-        Err(err) => panic!("{:?}", err),
-    };
+    let mut source_mass =
+        match ot::utils::get_1D_gauss_histogram(n_samples, mean_source, std_source) {
+            Ok(val) => val,
+            Err(err) => panic!("{:?}", err),
+        };
 
-    let mut target_mass = match ot::utils::get_1D_gauss_histogram(
-        n_samples,
-        mean_target,
-        std_target,
-    ) {
-        Ok(val) => val,
-        Err(err) => panic!("{:?}", err),
-    };
+    let mut target_mass =
+        match ot::utils::get_1D_gauss_histogram(n_samples, mean_target, std_target) {
+            Ok(val) => val,
+            Err(err) => panic!("{:?}", err),
+        };
 
     let source_samples = stack![Axis(1), x, source_mass];
     let target_samples = stack![Axis(1), x, target_mass];
