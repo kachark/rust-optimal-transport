@@ -1,4 +1,4 @@
-# ROT: Rust Optimal Transport
+# Rust Optimal Transport
 
 ![](https://github.com/kachark/rust-optimal-transport/blob/main/assets/ot_between_samples_2d_gaussian.png)
 
