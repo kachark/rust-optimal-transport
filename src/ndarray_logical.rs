@@ -50,7 +50,7 @@ where
 ///
 /// ```rust
 ///
-/// use rust_optimal_transport as rot;
+/// use rust_optimal_transport as ot;
 /// use rot::ndarray_logical::axis_all;
 /// use ndarray::{prelude::*, Axis};
 ///
@@ -97,7 +97,7 @@ where
 ///
 /// ```rust
 ///
-/// use rust_optimal_transport as rot;
+/// use rust_optimal_transport as ot;
 /// use rot::ndarray_logical::axis_any;
 /// use ndarray::{prelude::*, Axis};
 ///
@@ -142,7 +142,7 @@ where
 ///
 /// ```rust
 ///
-/// use rust_optimal_transport as rot;
+/// use rust_optimal_transport as ot;
 /// use rot::ndarray_logical::axis_is_nan;
 /// use ndarray::{prelude::*, Axis};
 ///
@@ -187,7 +187,7 @@ where
 ///
 /// ```rust
 ///
-/// use rust_optimal_transport as rot;
+/// use rust_optimal_transport as ot;
 /// use rot::ndarray_logical::axis_is_inf;
 /// use ndarray::{prelude::*, Axis};
 ///
