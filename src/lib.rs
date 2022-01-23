@@ -13,6 +13,7 @@
  *
 */
 
+use lp::FastTransportErrorCode;
 use thiserror::Error;
 
 pub mod lp;
@@ -49,4 +50,19 @@ pub enum OTError {
 
     #[error(transparent)]
     Other(#[from] anyhow::Error),
+
+    #[error("Non-error")]
+    Ok,
 }
+
+impl From<FastTransportErrorCode> for OTError {
+    fn from(e: FastTransportErrorCode) -> Self {
+        match e {
+            FastTransportErrorCode::IsUnbounded => OTError::FastTransportError("problem unbounded".to_string()),
+            FastTransportErrorCode::IsMaxIterReached => OTError::FastTransportError("max number of iterations reached. Try increasing iterations".to_string()),
+            FastTransportErrorCode::IsInfeasible => OTError::FastTransportError("problem infeasible. Check that a and b are in the simplex.".to_string()),
+            FastTransportErrorCode::IsOptimal => OTError::Ok
+        }
+    }
+}
+

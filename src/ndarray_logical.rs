@@ -51,7 +51,7 @@ where
 /// ```rust
 ///
 /// use rust_optimal_transport as ot;
-/// use rot::ndarray_logical::axis_all;
+/// use ot::ndarray_logical::axis_all;
 /// use ndarray::{prelude::*, Axis};
 ///
 /// let arr = array![[f32::INFINITY, 42.], [2., 11.]];
@@ -98,7 +98,7 @@ where
 /// ```rust
 ///
 /// use rust_optimal_transport as ot;
-/// use rot::ndarray_logical::axis_any;
+/// use ot::ndarray_logical::axis_any;
 /// use ndarray::{prelude::*, Axis};
 ///
 /// let arr = array![[f32::INFINITY, f32::INFINITY], [f32::NAN, 11.]];
@@ -143,7 +143,7 @@ where
 /// ```rust
 ///
 /// use rust_optimal_transport as ot;
-/// use rot::ndarray_logical::axis_is_nan;
+/// use ot::ndarray_logical::axis_is_nan;
 /// use ndarray::{prelude::*, Axis};
 ///
 /// let arr = array![[f64::NAN, 0.], [2., 11.]];
@@ -188,7 +188,7 @@ where
 /// ```rust
 ///
 /// use rust_optimal_transport as ot;
-/// use rot::ndarray_logical::axis_is_inf;
+/// use ot::ndarray_logical::axis_is_inf;
 /// use ndarray::{prelude::*, Axis};
 ///
 /// let arr = array![[f64::INFINITY, 0.], [2., 11.]];

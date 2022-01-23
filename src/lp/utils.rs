@@ -1,6 +1,5 @@
-use super::FastTransportResult;
+use super::FastTransportErrorCode;
 use crate::OTError;
-use anyhow::anyhow;
 use ndarray::prelude::*;
 
 /// Finds a unique dual potential such that the same objective value is achieved for both
@@ -120,22 +119,15 @@ pub fn estimate_dual_null_weights(
 }
 
 /// Convert FastTransport error codes to EMDErrors
-pub fn check_result(result_code: i32) -> Result<(), OTError> {
-    if result_code == FastTransportResult::Optimal as i32 {
-        Ok(())
-    } else if result_code == FastTransportResult::Unbounded as i32 {
-        Err(OTError::FastTransportError(String::from(
-            "Problem unbounded",
-        )))
-    } else if result_code == FastTransportResult::MaxIterReached as i32 {
-        Err(OTError::FastTransportError(String::from(
-            "numItermax reached before optimality. Try to increase numItermax",
-        )))
-    } else if result_code == FastTransportResult::Infeasible as i32 {
-        Err(OTError::FastTransportError(String::from(
-            "Problem infeasible. Check that a and b are in the simplex",
-        )))
-    } else {
-        Err(OTError::Other(anyhow!("oops!")))
+pub fn check_result(result_code: FastTransportErrorCode) -> Result<(), OTError> {
+
+    match result_code {
+
+        // If optimal, result is ok
+        FastTransportErrorCode::IsOptimal => Ok(()),
+        // All other codes are error codes...
+        _ => Err(OTError::from(result_code)),
+
     }
+
 }

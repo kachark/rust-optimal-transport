@@ -7,11 +7,23 @@ use ndarray::prelude::*;
 use ffi::emd_c;
 use utils::*;
 
-enum FastTransportResult {
-    Infeasible = 0,
-    Optimal = 1,
-    Unbounded = 2,
-    MaxIterReached = 3,
+pub enum FastTransportErrorCode {
+    IsInfeasible = 0,
+    IsOptimal = 1, // Non-error
+    IsUnbounded = 2,
+    IsMaxIterReached = 3,
+}
+
+impl From<i32> for FastTransportErrorCode {
+    fn from(e: i32) -> Self {
+        match e {
+            0 => FastTransportErrorCode::IsInfeasible,
+            1 => FastTransportErrorCode::IsOptimal,
+            2 => FastTransportErrorCode::IsUnbounded,
+            3 => FastTransportErrorCode::IsMaxIterReached,
+            _ => FastTransportErrorCode::IsMaxIterReached,
+        }
+    }
 }
 
 /// a: Source sample weights (defaults to uniform weight if empty)
@@ -113,7 +125,7 @@ pub fn emd(
     }
 
     // Propogate errors if there are any
-    check_result(result_code)?;
+    check_result(FastTransportErrorCode::from(result_code))?;
 
     Ok(G)
 }
