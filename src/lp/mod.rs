@@ -1,17 +1,42 @@
 mod ffi;
 mod utils;
 
-use super::OTError;
+use std::fmt;
+use std::error::Error;
 use ndarray::prelude::*;
 
+use super::OTError;
 use ffi::emd_c;
 use utils::*;
 
+/// Return codes from the FastTransport network simplex solver
+/// FastTransport returns 1 on success
+#[derive(Debug)]
 pub enum FastTransportErrorCode {
-    IsInfeasible = 0,
-    IsOptimal = 1, // Non-error
-    IsUnbounded = 2,
-    IsMaxIterReached = 3,
+    /// No feasible flow exists for the problem
+    IsInfeasible,
+    /// The problem is feasible and bounded.
+    /// Optimal flow and node potentials (primal and dual solutions) found
+    IsOptimal,
+    /// Objective function of the problem is unbounded
+    /// ie. there is a directed cycle having negative total cost and infinite
+    /// upper bound
+    IsUnbounded,
+    /// Maximum iterations reached by the solver
+    IsMaxIterReached,
+}
+
+impl Error for FastTransportErrorCode { }
+
+impl fmt::Display for FastTransportErrorCode {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            FastTransportErrorCode::IsInfeasible => write!(f, "Network simplex infeasible!"),
+            FastTransportErrorCode::IsOptimal => write!(f, "Optimal solution found!"),
+            FastTransportErrorCode::IsUnbounded => write!(f, "Network simplex unbounded!"),
+            FastTransportErrorCode::IsMaxIterReached => write!(f, "Max iteration reached!"),
+        }
+    }
 }
 
 impl From<i32> for FastTransportErrorCode {

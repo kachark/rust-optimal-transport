@@ -126,7 +126,9 @@ pub fn check_result(result_code: FastTransportErrorCode) -> Result<(), OTError> 
         // If optimal, result is ok
         FastTransportErrorCode::IsOptimal => Ok(()),
         // All other codes are error codes...
-        _ => Err(OTError::from(result_code)),
+        FastTransportErrorCode::IsInfeasible => Err(OTError::ExactOTError { source: FastTransportErrorCode::IsInfeasible } ),
+        FastTransportErrorCode::IsUnbounded => Err(OTError::ExactOTError { source: FastTransportErrorCode::IsUnbounded } ),
+        FastTransportErrorCode::IsMaxIterReached => Err(OTError::ExactOTError { source: FastTransportErrorCode::IsMaxIterReached } ),
 
     }
 

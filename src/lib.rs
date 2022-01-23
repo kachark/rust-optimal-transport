@@ -13,7 +13,6 @@
  *
 */
 
-use lp::FastTransportErrorCode;
 use thiserror::Error;
 
 pub mod lp;
@@ -42,8 +41,23 @@ pub enum OTError {
     //     mass_a: f64,
     //     mass_b: f64
     // },
-    #[error("Fast transport failed: '{0}'")]
-    FastTransportError(String),
+    #[error("Exact solver failed. ")]
+    ExactOTError {
+        #[from]
+        source: lp::FastTransportErrorCode,
+    },
+
+    // #[error("Sinkhorn solver failed. ")]
+    // SinkhornError {
+    //     #[from]
+    //     source: regularized::sinkhorn::SinkhornError,
+    // },
+
+    // #[error("Greenkhorn solver failed. ")]
+    // GreenkhornError {
+    //     #[from]
+    //     source: regularized::greenkhorn::GreenkhornError,
+    // },
 
     #[error("Invalid argument: '{0}'")]
     ArgError(String),
@@ -54,15 +68,3 @@ pub enum OTError {
     #[error("Non-error")]
     Ok,
 }
-
-impl From<FastTransportErrorCode> for OTError {
-    fn from(e: FastTransportErrorCode) -> Self {
-        match e {
-            FastTransportErrorCode::IsUnbounded => OTError::FastTransportError("problem unbounded".to_string()),
-            FastTransportErrorCode::IsMaxIterReached => OTError::FastTransportError("max number of iterations reached. Try increasing iterations".to_string()),
-            FastTransportErrorCode::IsInfeasible => OTError::FastTransportError("problem infeasible. Check that a and b are in the simplex.".to_string()),
-            FastTransportErrorCode::IsOptimal => OTError::Ok
-        }
-    }
-}
-

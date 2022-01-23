@@ -22,6 +22,7 @@ mod ffi {
 }
 
 /// Wrapper of C++ FastTransport OT Network Simplex solver
+/// Returns 1 on success
 #[allow(non_snake_case)]
 pub fn emd_c(
     a: &mut Array1<f64>,
