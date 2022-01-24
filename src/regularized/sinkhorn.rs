@@ -1,6 +1,5 @@
 // use crate::ndarray_logical;
 use ndarray::prelude::*;
-use ndarray_einsum_beta::einsum;
 use ndarray_linalg::norm;
 
 use crate::OTError;
@@ -22,7 +21,7 @@ pub fn sinkhorn_knopp(
 ) -> Result<Array2<f64>, OTError> {
     // TODO: check for NaN, inf, etc.
 
-    let mut err;
+    let mut err: f64;
 
     // Defaults
     let mut iterations = 1000;
@@ -78,6 +77,8 @@ pub fn sinkhorn_knopp(
 
     for count in 0..iterations {
 
+        let v_prev = v.clone();
+
         // Update v
         let ktu = k.t().dot(&u);
 
@@ -91,9 +92,7 @@ pub fn sinkhorn_knopp(
         azip!((u in &mut u, &a in &a_cache, &kv in &kv) *u = a / kv);
 
         if count % 10 == 0 {
-            let mut tmp = einsum("i,ij,j->j", &[&u, &k, &v]).unwrap();
-            tmp -= &b_cache;
-            err = norm::Norm::norm_l1(&tmp);
+            err = norm::Norm::norm_l1( &(&v - &v_prev) );
 
             if err < stop {
                 break;
