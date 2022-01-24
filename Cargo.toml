@@ -21,7 +21,7 @@ cxx = "1.0"
 thiserror = "1.0"
 anyhow = "1.0"
 num-traits = "0.2"
-ndarray = "0.15.4"
+ndarray = { version = "0.15.4", features = ["rayon"] }
 ndarray_einsum_beta = "0.7.0"
 ndarray-linalg = { version = "0.14", features = ["openblas-system"] }
 ndarray-stats = "0.5"
@@ -33,8 +33,8 @@ cxx-build = "1.0"
 [dev-dependencies]
 pyo3 = { version = "0.15.1", features = ["auto-initialize"] }
 numpy = "0.15"
-criterion = "0.3"
 rand = "0.8"
+criterion = "0.3"
 
 [[example]]
 name = "emd_2D"

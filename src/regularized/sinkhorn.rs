@@ -1,4 +1,4 @@
-use crate::ndarray_logical;
+// use crate::ndarray_logical;
 use ndarray::prelude::*;
 use ndarray_einsum_beta::einsum;
 use ndarray_linalg::norm;
@@ -21,7 +21,8 @@ pub fn sinkhorn_knopp(
     stop_threshold: Option<f64>,
 ) -> Result<Array2<f64>, OTError> {
     // TODO: check for NaN, inf, etc.
-    // TODO: why do a, b, M need to be mutable references?
+
+    let mut err;
 
     // Defaults
     let mut iterations = 1000;
@@ -65,81 +66,43 @@ pub fn sinkhorn_knopp(
         });
     }
 
-    // TODO: same mass can be lost by summing with machine precision
-    // // Ensure the same mass
-    // if a.sum() != b.sum() {
-    //     return Err( OTError::HistogramSumError{ mass_a: a.sum(), mass_b: b.sum() } )
-    // }
-
     // we assume that no distances are null except those of the diagonal distances
     let mut u = Array1::<f64>::from_vec(vec![1f64 / (dim_a as f64); dim_a]);
     let mut v = Array1::<f64>::from_vec(vec![1f64 / (dim_b as f64); dim_b]);
 
     // K = exp(-M/reg)
-    let mut k = Array2::from_shape_fn((mshape[0], mshape[1]), |(i, j)| (-M[[i, j]] / reg).exp());
+    let k = Array2::from_shape_fn((mshape[0], mshape[1]), |(i, j)| (-M[[i, j]] / reg).exp());
 
-    // TODO: optimize sinkhorn iteration
+    let a_cache = a.clone();
+    let b_cache = b.clone();
+
     for count in 0..iterations {
-        // TODO: don't clone in sinkhorn loop
-        // how to do this iteration without cloning?
-        let uprev = u.clone();
-        let vprev = v.clone();
 
-        // TODO: consider using closures to optimize our operations
-        // NOTE: what's changing? u, v. what's new? ktu, kv
-        // NOTE: expensive - this dot product is repeated later
         // Update v
-        let ktu = &k.t().dot(&u);
+        let ktu = k.t().dot(&u);
 
-        // NOTE: expensive - this division operation is repeated later
-        // NOTE: can we zip over ktu??
         // v = b/ktu
-        for (i, ele_v) in v.iter_mut().enumerate() {
-            *ele_v = b[i] / ktu[i];
-        }
+        azip!((v in &mut v, &b in &b_cache, &ktu in &ktu) *v = b / ktu);
 
-        // NOTE: expensive
         // Update u
-        let kv = &k.dot(&v);
+        let kv = k.dot(&v);
 
-        // NOTE: expensive
         // u = a/kv
-        for (i, ele_u) in u.iter_mut().enumerate() {
-            *ele_u = a[i] / kv[i];
-        }
-
-        // Check stop conditions
-        let ktu_false_flag = !ndarray_logical::all(&ktu);
-        let u_nan_flag = ndarray_logical::is_nan(&u);
-        let u_inf_flag = ndarray_logical::is_inf(&u);
-        let v_nan_flag = ndarray_logical::is_nan(&v);
-        let v_inf_flag = ndarray_logical::is_inf(&v);
-
-        // If solution is unusable, use previous values for u and v
-        if ktu_false_flag || u_nan_flag || u_inf_flag || v_nan_flag || v_inf_flag {
-            u = uprev;
-            v = vprev;
-            break;
-        }
+        azip!((u in &mut u, &a in &a_cache, &kv in &kv) *u = a / kv);
 
         if count % 10 == 0 {
             let mut tmp = einsum("i,ij,j->j", &[&u, &k, &v]).unwrap();
-            tmp -= &b.clone();
-            let err = norm::Norm::norm(&tmp);
+            tmp -= &b_cache;
+            err = norm::Norm::norm_l1(&tmp);
+
             if err < stop {
                 break;
             }
         }
     }
 
-    // diag(u)*K*diag(v)
-    for (i, mut row) in k.axis_iter_mut(Axis(0)).enumerate() {
-        for (j, k) in row.iter_mut().enumerate() {
-            *k *= u[i] * v[j];
-        }
-    }
+    Ok(u.into_shape((dim_a, 1)).unwrap() * k * v.into_shape((1, dim_b)).unwrap())
 
-    Ok(k)
 }
 
 #[cfg(test)]
