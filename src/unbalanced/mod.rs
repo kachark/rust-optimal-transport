@@ -1,7 +1,6 @@
-use crate::ndarray_logical;
+// use crate::ndarray_logical;
 use ndarray::prelude::*;
-use ndarray_einsum_beta::einsum;
-use ndarray_linalg::norm::Norm;
+use ndarray_linalg::norm;
 
 use crate::OTError;
 
@@ -23,16 +22,19 @@ pub fn sinkhorn_knopp_unbalanced(
     num_iter_max: Option<i32>,
     stop_threshold: Option<f64>,
 ) -> Result<Array2<f64>, OTError> {
-    // Defaults
-    let mut iterations = 1000;
-    if let Some(val) = num_iter_max {
-        iterations = val;
-    }
 
-    let mut stop = 1E-9;
-    if let Some(val) = stop_threshold {
-        stop = val;
-    }
+    let mut err;
+
+    // Defaults
+    let iterations = match num_iter_max {
+        Some(val) => val,
+        None => 1000,
+    };
+
+    let stop = match stop_threshold {
+        Some(val) => val,
+        None => 1E-9,
+    };
 
     let mshape = M.shape();
     let m0 = mshape[0];
@@ -73,56 +75,37 @@ pub fn sinkhorn_knopp_unbalanced(
     // K = exp(-M/reg)
     let mut k = Array2::from_shape_fn((mshape[0], mshape[1]), |(i, j)| (-M[[i, j]] / reg).exp());
 
+    let a_cache = a.clone();
+    let b_cache = b.clone();
+
     for count in 0..iterations {
-        let uprev = u.clone();
-        let vprev = v.clone();
 
-        // Update u and v
-        // u = (a/kv) ** fi
-        let kv = &k.dot(&v);
-        for (i, ele_u) in u.iter_mut().enumerate() {
-            *ele_u = (a[i] / kv[i]).powf(fi);
-        }
+        let v_prev = v.clone();
 
-        // v = (b/ktu) ** fi
-        let ktu = &k.t().dot(&u);
-        for (i, ele_v) in v.iter_mut().enumerate() {
-            *ele_v = (b[i] / ktu[i]).powf(fi);
-        }
+        // Update v
+        let ktu = k.t().dot(&u);
 
-        // Check stop conditions
-        let ktu_false_flag = !ndarray_logical::all(&ktu);
-        let u_nan_flag = ndarray_logical::is_nan(&u);
-        let u_inf_flag = ndarray_logical::is_inf(&u);
-        let v_nan_flag = ndarray_logical::is_nan(&v);
-        let v_inf_flag = ndarray_logical::is_inf(&v);
+        // v = b/ktu
+        azip!((v in &mut v, &b in &b_cache, &ktu in &ktu) *v = (b / ktu).powf(fi));
 
-        // If solution is unusable, use previous values for u and v
-        if ktu_false_flag || u_nan_flag || u_inf_flag || v_nan_flag || v_inf_flag {
-            u = uprev;
-            v = vprev;
-            break;
-        }
+        // Update u
+        let kv = k.dot(&v);
+
+        // u = a/kv
+        azip!((u in &mut u, &a in &a_cache, &kv in &kv) *u = (a / kv).powf(fi));
 
         if count % 10 == 0 {
-            let mut tmp = einsum("i,ij,j->j", &[&u, &k, &v]).unwrap();
-            tmp -= &b.clone();
-            let err = Norm::norm(&tmp);
+            err = norm::Norm::norm_l1( &(&v - &v_prev) );
+
             if err < stop {
                 break;
             }
         }
+
     }
 
-    // nhists = 1 case only
-    // diag(u)*K*diag(v)
-    for (i, mut row) in k.axis_iter_mut(Axis(0)).enumerate() {
-        for (j, k) in row.iter_mut().enumerate() {
-            *k *= u[i] * v[j];
-        }
-    }
+    Ok(u.into_shape((dim_a, 1)).unwrap() * k * v.into_shape((1, dim_b)).unwrap())
 
-    Ok(k)
 }
 
 #[cfg(test)]

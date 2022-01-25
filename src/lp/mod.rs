@@ -66,15 +66,15 @@ pub fn emd(
     center_dual: Option<bool>,
 ) -> Result<Array2<f64>, OTError> {
     // Defaults
-    let mut iterations = 100000;
-    if let Some(val) = num_iter_max {
-        iterations = val;
-    }
+    let iterations = match num_iter_max {
+        Some(val) => val,
+        None => 100000,
+    };
 
-    let mut center = true;
-    if let Some(val) = center_dual {
-        center = val;
-    }
+    let center = match center_dual {
+        Some(val) => val,
+        None => false,
+    };
 
     let mshape = M.shape();
     let m0 = mshape[0];
@@ -107,34 +107,31 @@ pub fn emd(
         });
     }
 
-    // TODO: same mass can be lost by summing with machine precision
-    // // Ensure the same mass
-    // if a.sum() != b.sum() {
-    //     return Err( OTError::HistogramSumError{ mass_a: a.sum(), mass_b: b.sum() } )
-    // }
-
     *b *= a.sum() / b.sum();
 
-    // not_asel == ~asel, not_bsel == ~bsel
     // binary indexing of non-zero weights
-    let mut not_asel = Array1::<i32>::zeros(dim_a);
-    for (i, val) in a.iter().enumerate() {
-        if *val == 0f64 {
-            not_asel[i] = 1;
-        } else {
-            not_asel[i] = 0;
-        }
-    }
+    let asel = a.mapv(|a| a > 0.);
+    let bsel = b.mapv(|b| b > 0.);
 
-    let mut not_bsel = Array1::<i32>::zeros(dim_b);
-    for (i, val) in b.iter().enumerate() {
-        if *val == 0f64 {
-            not_bsel[i] = 1;
+    // sum(~asel)
+    let not_asel_sum = (!asel).iter().fold(0., |acc, x| {
+        if *x {
+            acc + 1.
         } else {
-            not_bsel[i] = 0;
+            acc
         }
-    }
+    });
 
+    // sum(~bsel)
+    let not_bsel_sum = (!bsel).iter().fold(0., |acc, x| {
+        if *x {
+            acc + 1.
+        } else {
+            acc
+        }
+    });
+
+    // Call FastTransport via wrapper
     let (G, _cost, mut u, mut v, result_code) = emd_c(a, b, M, iterations);
 
     if center {
@@ -143,7 +140,7 @@ pub fn emd(
         v = result.1;
     }
 
-    if not_asel.sum() > 1 || not_bsel.sum() > 1 {
+    if not_asel_sum > 1. || not_bsel_sum > 1. {
         let result = estimate_dual_null_weights(&u, &v, a, b, M);
         u = result.0;
         v = result.1;

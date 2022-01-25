@@ -24,15 +24,15 @@ pub fn sinkhorn_knopp(
     let mut err: f64;
 
     // Defaults
-    let mut iterations = 1000;
-    if let Some(val) = num_iter_max {
-        iterations = val;
-    }
+    let iterations = match num_iter_max {
+        Some(val) => val,
+        None => 1000,
+    };
 
-    let mut stop = 1E-9;
-    if let Some(val) = stop_threshold {
-        stop = val;
-    }
+    let stop = match stop_threshold {
+        Some(val) => val,
+        None => 1E-9,
+    };
 
     let mshape = M.shape();
     let m0 = mshape[0];
