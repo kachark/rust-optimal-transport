@@ -57,23 +57,8 @@ pub fn estimate_dual_null_weights(
     M: &Array2<f64>,
 ) -> (Array1<f64>, Array1<f64>) {
     // binary indexing of non-zero weights
-    let mut asel = Array1::<i32>::zeros(a.len());
-    for (i, val) in a.iter().enumerate() {
-        if *val == 0f64 {
-            asel[i] = 0;
-        } else {
-            asel[i] = 1;
-        }
-    }
-
-    let mut bsel = Array1::<i32>::zeros(b.len());
-    for (i, val) in b.iter().enumerate() {
-        if *val == 0f64 {
-            bsel[i] = 0;
-        } else {
-            bsel[i] = 1;
-        }
-    }
+    let asel = a.mapv(|a| (a > 0.) as i32);
+    let bsel = b.mapv(|b| (b > 0.) as i32);
 
     // compute dual constraints violation
     // NOTE: alpha0 as a col vec added to each col of row vec beta0
