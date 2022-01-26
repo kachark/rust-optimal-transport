@@ -15,11 +15,11 @@
 
 use thiserror::Error;
 
-pub mod lp;
-pub mod metrics;
-pub mod ndarray_logical;
+pub mod exact;
 pub mod regularized;
 pub mod unbalanced;
+pub mod metrics;
+pub mod ndarray_logical;
 pub mod utils;
 
 #[derive(Error, Debug)]
@@ -44,7 +44,7 @@ pub enum OTError {
     #[error("Exact solver failed. ")]
     ExactOTError {
         #[from]
-        source: lp::FastTransportErrorCode,
+        source: exact::FastTransportErrorCode,
     },
 
     // #[error("Sinkhorn solver failed. ")]

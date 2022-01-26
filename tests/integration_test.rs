@@ -33,7 +33,7 @@ fn emd_integration_test() {
     );
     ground_cost = &ground_cost / *ground_cost.max().unwrap();
 
-    let result = match ot::lp::emd(
+    let result = match ot::exact::emd(
         &mut source_mass,
         &mut target_mass,
         &mut ground_cost,

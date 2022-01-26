@@ -1,7 +1,7 @@
 use ndarray::prelude::*;
 use ndarray_stats::QuantileExt;
 
-use ot::lp::emd;
+use ot::exact::emd;
 use rust_optimal_transport as ot;
 
 mod plot;

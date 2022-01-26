@@ -1,8 +1,8 @@
 use ndarray::{prelude::*, stack};
 use ndarray_stats::QuantileExt;
 
-use ot::regularized::sinkhorn::sinkhorn_knopp;
 use rust_optimal_transport as ot;
+use ot::regularized::sinkhorn::sinkhorn_knopp;
 
 mod plot;
 
