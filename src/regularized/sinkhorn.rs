@@ -70,10 +70,14 @@ pub fn sinkhorn_knopp(
     let mut v = Array1::<f64>::from_vec(vec![1f64 / (dim_b as f64); dim_b]);
 
     // K = exp(-M/reg)
-    let k = Array2::from_shape_fn((mshape[0], mshape[1]), |(i, j)| (-M[[i, j]] / reg).exp());
+    let f = |ele: f64| (-ele/reg).exp();
+    let k = M.clone().mapv_into(f);
 
     let a_cache = a.clone();
     let b_cache = b.clone();
+
+    let numerator: Array1<f64> = a_cache.iter().map(|a| 1./a).collect();
+    let kp = numerator.into_shape((dim_a, 1)).unwrap() * &k;
 
     for count in 0..iterations {
 
@@ -86,10 +90,8 @@ pub fn sinkhorn_knopp(
         azip!((v in &mut v, &b in &b_cache, &ktu in &ktu) *v = b / ktu);
 
         // Update u
-        let kv = k.dot(&v);
-
         // u = a/kv
-        azip!((u in &mut u, &a in &a_cache, &kv in &kv) *u = a / kv);
+        azip!((u in &mut u, &kpdotv in &kp.dot(&v)) *u = 1. / kpdotv);
 
         if count % 10 == 0 {
             err = norm::Norm::norm_l1( &(&v - &v_prev) );

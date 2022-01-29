@@ -60,14 +60,14 @@ fn main() {
         Err(error) => panic!("{:?}", error),
     };
 
-    // Plot using matplotlib
-    match plot::plot_py(
-        &source_samples,
-        &target_samples,
-        &ot_matrix,
-        "OT matrix sinkhorn",
-    ) {
-        Ok(_) => (),
-        Err(error) => panic!("{:?}", error),
-    };
+//     // Plot using matplotlib
+//     match plot::plot_py(
+//         &source_samples,
+//         &target_samples,
+//         &ot_matrix,
+//         "OT matrix sinkhorn",
+//     ) {
+//         Ok(_) => (),
+//         Err(error) => panic!("{:?}", error),
+//     };
 }

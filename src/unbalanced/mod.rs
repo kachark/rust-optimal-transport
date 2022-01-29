@@ -73,7 +73,8 @@ pub fn sinkhorn_knopp_unbalanced(
     let mut v = Array1::<f64>::from_vec(vec![1f64 / (dim_b as f64); dim_b]);
 
     // K = exp(-M/reg)
-    let mut k = Array2::from_shape_fn((mshape[0], mshape[1]), |(i, j)| (-M[[i, j]] / reg).exp());
+    let f = |ele: f64| (-ele/reg).exp();
+    let k = M.clone().mapv_into(f);
 
     let a_cache = a.clone();
     let b_cache = b.clone();

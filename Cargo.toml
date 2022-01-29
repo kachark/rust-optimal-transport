@@ -16,12 +16,15 @@ description = "A library of optimal transport solvers for Rust"
 keywords = ["optimal-transport", "ot", "machine-learning", "optimization", "ai"]
 categories = ["algorithms", "mathematics", "science"]
 
+# TODO: Don't set features, give the option to users
 [dependencies]
 cxx = "1.0"
 thiserror = "1.0"
 anyhow = "1.0"
 num-traits = "0.2"
-ndarray = { version = "0.15.4", features = ["rayon"] }
+ndarray = { version = "0.15.4", features = ["rayon", "blas"] }
+blas-src = { version = "0.8", features = ["openblas"] }
+openblas-src = { version = "0.10", features = ["cblas", "system"] }
 ndarray_einsum_beta = "0.7.0"
 ndarray-linalg = { version = "0.14", features = ["openblas-system"] }
 ndarray-stats = "0.5"
@@ -45,3 +48,6 @@ name = "sinkhorn_1D"
 [[bench]]
 name = "sinkhorn"
 harness = false
+
+[profile.bench]
+debug = true

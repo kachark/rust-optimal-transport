@@ -15,6 +15,8 @@
 
 use thiserror::Error;
 
+extern crate blas_src;
+
 pub mod exact;
 pub mod regularized;
 pub mod unbalanced;
