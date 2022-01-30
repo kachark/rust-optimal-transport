@@ -1,6 +1,7 @@
 use std::f64;
+use std::fmt;
 
-use criterion::{black_box, criterion_group, criterion_main, Criterion, BenchmarkId};
+use criterion::{criterion_group, criterion_main, Criterion, BenchmarkId};
 
 use ndarray::prelude::*;
 use ndarray_rand::rand_distr::uniform::Uniform;
@@ -10,6 +11,7 @@ use rand::{Rng, SeedableRng};
 use rust_optimal_transport as ot;
 use ot::regularized::sinkhorn::sinkhorn_knopp;
 
+#[derive(Clone)]
 struct SinkhornInput {
 
     n_samples: usize,
@@ -17,7 +19,7 @@ struct SinkhornInput {
     target_mass: Array1<f64>,
     cost: Array2<f64>,
     reg: f64,
-    num_iter_max: u32,
+    num_iter_max: i32,
     threshold: f64,
 
 }
@@ -26,8 +28,6 @@ impl SinkhornInput {
 
     fn new(n_samples: usize) -> Self {
 
-        // parametrize sinkhorn_knopp(n_samples)
-        // Need this to be static across each benchmark
         let mut rng = StdRng::seed_from_u64(123456789);
         let distribution = Uniform::<f64>::new(0.0, 1.0);
 
@@ -44,11 +44,11 @@ impl SinkhornInput {
         let target = target;
 
         // Uniform distribution on the source and target densities
-        let mut source_mass = Array1::<f64>::from_vec(vec![1f64 / (n_samples as f64); (n_samples/4) as usize]);
-        let mut target_mass = Array1::<f64>::from_vec(vec![1f64 / (n_samples as f64); n_samples as usize]);
+        let source_mass = Array1::<f64>::ones(n_samples / 4) / ((n_samples / 4) as f64);
+        let target_mass = Array1::<f64>::ones(n_samples) / (n_samples as f64);
 
         // Compute ground cost matrix - Euclidean distance
-        let cost = ot::metrics::dist(&source.clone(), &target.clone(), ot::metrics::MetricType::SqEuclidean);
+        let cost = ot::metrics::dist(&source, &target, ot::metrics::MetricType::SqEuclidean);
 
         Self {
             n_samples,
@@ -64,6 +64,12 @@ impl SinkhornInput {
 
 }
 
+impl fmt::Display for SinkhornInput {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "Num samples: {}", self.n_samples)
+    }
+}
+
 fn sinkhorn_benchmark(c: &mut Criterion) {
 
     let inputs_50 = SinkhornInput::new(50);
@@ -75,53 +81,39 @@ fn sinkhorn_benchmark(c: &mut Criterion) {
 
     // Done setup
 
+    let n_runs = 100;
     let mut group = c.benchmark_group("sinkhorn_group");
 
-    group.bench_function("sinkhorn 50", |b| {
-        // per-sample
-        b.iter(|| {
-            sinkhorn_knopp(&mut inputs_50.source_mass.clone(), &mut inputs_50.target_mass.clone(), &inputs_50.cost.clone(), inputs_50.reg, None, Some(inputs_50.threshold)).unwrap()
-        })
-    });
+    for input in [inputs_50, inputs_100, inputs_500, inputs_1000, inputs_2000, inputs_5000].iter() {
 
-    group.bench_function("sinkhorn 100", |b| {
-        // per-sample
-        b.iter(|| {
-            sinkhorn_knopp(&mut inputs_100.source_mass.clone(), &mut inputs_100.target_mass.clone(), &inputs_100.cost.clone(), inputs_100.reg, None, Some(inputs_100.threshold)).unwrap()
-        })
-    });
+        group.bench_with_input(
+            BenchmarkId::new("sinkhorn", input.n_samples), input,
+            move |b, i| b.iter_with_large_drop(|| {
+                sinkhorn_knopp(&mut i.source_mass.clone(), &mut i.target_mass.clone(), &i.cost.clone(), i.reg, Some(i.num_iter_max), Some(i.threshold)).unwrap();
+            }),
+        ).sample_size(n_runs);
 
-    group.bench_function("sinkhorn 500", |b| {
-        // per-sample
-        b.iter(|| {
-            sinkhorn_knopp(&mut inputs_500.source_mass.clone(), &mut inputs_500.target_mass.clone(), &inputs_500.cost.clone(), inputs_500.reg, None, Some(inputs_500.threshold)).unwrap()
-        })
-    });
-
-    group.bench_function("sinkhorn 1000", |b| {
-        // per-sample
-        b.iter(|| {
-            sinkhorn_knopp(&mut inputs_1000.source_mass.clone(), &mut inputs_1000.target_mass.clone(), &inputs_1000.cost.clone(), inputs_1000.reg, None, Some(inputs_1000.threshold)).unwrap()
-        })
-    });
-
-    group.bench_function("sinkhorn 2000", |b| {
-        // per-sample
-        b.iter(|| {
-            sinkhorn_knopp(&mut inputs_2000.source_mass.clone(), &mut inputs_2000.target_mass.clone(), &inputs_2000.cost.clone(), inputs_2000.reg, None, Some(inputs_2000.threshold)).unwrap()
-        })
-    });
-
-    group.bench_function("sinkhorn 5000", |b| {
-        // per-sample
-        b.iter(|| {
-            sinkhorn_knopp(&mut inputs_5000.source_mass.clone(), &mut inputs_5000.target_mass.clone(), &inputs_5000.cost.clone(), inputs_5000.reg, None, Some(inputs_5000.threshold)).unwrap()
-        })
-    });
+    }
 
     group.finish();
 
 }
 
-criterion_group!(benches, sinkhorn_benchmark);
+
+fn sinkhorn_benchmark_single(c: &mut Criterion) {
+
+    let inputs_500 = SinkhornInput::new(500);
+
+    // Done setup
+
+    c.bench_with_input(
+        BenchmarkId::new("sinkhorn_single", inputs_500.n_samples), &inputs_500, |b, i| b.iter_with_large_drop(|| {
+            sinkhorn_knopp(&mut i.source_mass.clone(), &mut i.target_mass.clone(), &i.cost.clone(), i.reg, Some(i.num_iter_max), Some(i.threshold)).unwrap();
+        }),
+    );
+
+
+}
+
+criterion_group!(benches, sinkhorn_benchmark_single, sinkhorn_benchmark);
 criterion_main!(benches);

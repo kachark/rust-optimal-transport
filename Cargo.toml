@@ -23,8 +23,8 @@ thiserror = "1.0"
 anyhow = "1.0"
 num-traits = "0.2"
 ndarray = { version = "0.15.4", features = ["rayon", "blas"] }
-blas-src = { version = "0.8", features = ["openblas"] }
-openblas-src = { version = "0.10", features = ["cblas", "system"] }
+blas-src = { version = "0.8", default-features = false, features = ["openblas"] }
+# openblas-src = { version = "0.10", features = ["cblas", "system"] }
 ndarray_einsum_beta = "0.7.0"
 ndarray-linalg = { version = "0.14", features = ["openblas-system"] }
 ndarray-stats = "0.5"

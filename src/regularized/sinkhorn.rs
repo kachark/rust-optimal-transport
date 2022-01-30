@@ -22,6 +22,10 @@ pub fn sinkhorn_knopp(
     // TODO: check for NaN, inf, etc.
 
     let mut err: f64;
+    let kp;
+    let k_transpose;
+    let mut ktu;
+    let mut v_prev;
 
     // Defaults
     let iterations = match num_iter_max {
@@ -42,14 +46,14 @@ pub fn sinkhorn_knopp(
 
     // if a and b empty, default to uniform distribution
     if a.is_empty() {
-        *a = Array1::from_vec(vec![1f64 / (m0 as f64); m0]);
+        *a = Array1::<f64>::from_elem(m0, 1. / (m0 as f64));
         dim_a = m0;
     } else {
         dim_a = a.len();
     }
 
     if b.is_empty() {
-        *b = Array1::from_vec(vec![1f64 / (m1 as f64); m1]);
+        *b = Array1::<f64>::from_elem(m1, 1. / (m1 as f64));
         dim_b = m1;
     } else {
         dim_b = b.len();
@@ -66,8 +70,8 @@ pub fn sinkhorn_knopp(
     }
 
     // we assume that no distances are null except those of the diagonal distances
-    let mut u = Array1::<f64>::from_vec(vec![1f64 / (dim_a as f64); dim_a]);
-    let mut v = Array1::<f64>::from_vec(vec![1f64 / (dim_b as f64); dim_b]);
+    let mut u = Array1::<f64>::from_elem(dim_a, 1. / (dim_a as f64));
+    let mut v = Array1::<f64>::from_elem(dim_b, 1. / (dim_b as f64));
 
     // K = exp(-M/reg)
     let f = |ele: f64| (-ele/reg).exp();
@@ -76,21 +80,25 @@ pub fn sinkhorn_knopp(
     let a_cache = a.clone();
     let b_cache = b.clone();
 
-    let numerator: Array1<f64> = a_cache.iter().map(|a| 1./a).collect();
-    let kp = numerator.into_shape((dim_a, 1)).unwrap() * &k;
+    // Kp = (1./a) * K
+    let numerator: Array1<f64> = a_cache.mapv_into(|a| 1./a);
+    kp = numerator.into_shape((dim_a, 1)).unwrap() * &k;
+
+    // K.transpose()
+    k_transpose = k.t();
 
     for count in 0..iterations {
 
-        let v_prev = v.clone();
+        v_prev = v.clone();
 
         // Update v
-        let ktu = k.t().dot(&u);
+        ktu = k_transpose.dot(&u);
 
         // v = b/ktu
         azip!((v in &mut v, &b in &b_cache, &ktu in &ktu) *v = b / ktu);
 
         // Update u
-        // u = a/kv
+        // u = a/kv = 1 / (dot(kp, v)
         azip!((u in &mut u, &kpdotv in &kp.dot(&v)) *u = 1. / kpdotv);
 
         if count % 10 == 0 {
