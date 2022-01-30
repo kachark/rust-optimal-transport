@@ -15,6 +15,7 @@
 
 use thiserror::Error;
 
+#[cfg(feature = "blas")]
 extern crate blas_src;
 
 pub mod exact;

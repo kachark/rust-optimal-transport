@@ -16,17 +16,16 @@ description = "A library of optimal transport solvers for Rust"
 keywords = ["optimal-transport", "ot", "machine-learning", "optimization", "ai"]
 categories = ["algorithms", "mathematics", "science"]
 
-# TODO: Don't set features, give the option to users
 [dependencies]
 cxx = "1.0"
 thiserror = "1.0"
 anyhow = "1.0"
 num-traits = "0.2"
-ndarray = { version = "0.15.4", features = ["rayon", "blas"] }
-blas-src = { version = "0.8", default-features = false, features = ["openblas"] }
-# openblas-src = { version = "0.10", features = ["cblas", "system"] }
+ndarray = "0.15.4"
+blas-src = { version = "0.8", default-features = false, optional = true}
+openblas-src = { version = "0.10", optional = true }
+ndarray-linalg = "0.14"
 ndarray_einsum_beta = "0.7.0"
-ndarray-linalg = { version = "0.14", features = ["openblas-system"] }
 ndarray-stats = "0.5"
 ndarray-rand = "0.14"
 
@@ -38,6 +37,20 @@ pyo3 = { version = "0.15.1", features = ["auto-initialize"] }
 numpy = "0.15"
 rand = "0.8"
 criterion = "0.3"
+
+[features]
+default = ["ndarray-linalg-openblas-system"]
+blas = ["default", "openblas-system"]
+
+# ndarray-linalg LAPACK FFI
+ndarray-linalg-openblas-static = ["ndarray-linalg/openblas-static"]
+ndarray-linalg-openblas-system = ["ndarray-linalg/openblas-system"]
+
+# Compile openblas
+openblas = ["ndarray/blas", "blas-src", "blas-src/openblas", "openblas-src"]
+
+# Pre-compiled/System openblas
+openblas-system = ["ndarray/blas", "blas-src", "blas-src/openblas", "openblas-src/cblas", "openblas-src/system"]
 
 [[example]]
 name = "emd_2D"
