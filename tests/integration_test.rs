@@ -87,8 +87,8 @@ fn sinkhorn_integration_test() {
     ];
 
     // Uniform distribution on the source and target densities
-    let mut source_mass = Array1::<f64>::from_vec(vec![1f64 / (n as f64); n as usize]);
-    let mut target_mass = Array1::<f64>::from_vec(vec![1f64 / (n as f64); n as usize]);
+    let mut source_mass = Array1::<f64>::from_elem(n, 1. / (n as f64));
+    let mut target_mass = Array1::<f64>::from_elem(n, 1. / (n as f64));
 
     // Compute ground cost matrix - Euclidean distance
     let mut ground_cost = ot::metrics::dist(&source, &target, ot::metrics::MetricType::SqEuclidean);
@@ -150,8 +150,8 @@ fn greenkhorn_integration_test() {
     ];
 
     // Uniform distribution on the source and target densities
-    let mut source_mass = Array1::<f64>::from_vec(vec![1f64 / (n as f64); n as usize]);
-    let mut target_mass = Array1::<f64>::from_vec(vec![1f64 / (n as f64); n as usize]);
+    let mut source_mass = Array1::<f64>::from_elem(n, 1. / (n as f64));
+    let mut target_mass = Array1::<f64>::from_elem(n, 1. / (n as f64));
 
     // Compute ground cost matrix - Euclidean distance
     let mut ground_cost = ot::metrics::dist(&source, &target, ot::metrics::MetricType::SqEuclidean);

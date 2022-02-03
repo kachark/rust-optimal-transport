@@ -34,7 +34,7 @@ rust-optimal-transport = "0.1"
 ```rust
 use rust_optimal_transport as ot;
 
-use ot::lp::emd;
+use ot::exact::emd;
 ```
 
 * Compute OT matrix as the Earth Mover's Distance
@@ -56,8 +56,8 @@ let source = ot::utils::sample_2D_gauss(n_samples, &mu_source, &cov_source).unwr
 let target = ot::utils::sample_2D_gauss(n_samples, &mu_target, &cov_target).unwrap();
 
 // Uniform distribution on the source and target samples
-let mut source_mass = Array1::<f64>::from_vec(vec![1f64 / (n_samples as f64); n_samples as usize]);
-let mut target_mass = Array1::<f64>::from_vec(vec![1f64 / (n_samples as f64); n_samples as usize]);
+let mut source_mass = Array1::<f64>::from_elem(n, 1. / (n as f64));
+let mut target_mass = Array1::<f64>::from_elem(n, 1. / (n as f64));
 
 // Compute ground cost matrix - Squared Euclidean distance
 let mut ground_cost = ot::metrics::dist(&source, &target, ot::utils::metrics::MetricType::SqEuclidean);

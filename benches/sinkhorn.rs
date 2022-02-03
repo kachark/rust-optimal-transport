@@ -44,8 +44,8 @@ impl SinkhornInput {
         let target = target;
 
         // Uniform distribution on the source and target densities
-        let source_mass = Array1::<f64>::ones(n_samples / 4) / ((n_samples / 4) as f64);
-        let target_mass = Array1::<f64>::ones(n_samples) / (n_samples as f64);
+        let source_mass = Array1::<f64>::from_elem(n_samples/4, 1. / ((n_samples/4) as f64));
+        let target_mass = Array1::<f64>::from_elem(n_samples, 1. / (n_samples as f64));
 
         // Compute ground cost matrix - Euclidean distance
         let cost = ot::metrics::dist(&source, &target, ot::metrics::MetricType::SqEuclidean);
