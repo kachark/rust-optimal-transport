@@ -1,8 +1,8 @@
 use ndarray::prelude::*;
 use ndarray_stats::QuantileExt;
-use rust_optimal_transport as ot;
-use ot::OTSolver;
 use ot::metrics::MetricType::SqEuclidean;
+use ot::OTSolver;
+use rust_optimal_transport as ot;
 
 #[test]
 fn emd_integration_test() {
@@ -28,21 +28,16 @@ fn emd_integration_test() {
 
     // Compute ground cost matrix - Squared Euclidean distance
     let x_reshaped: Array2<f64> = x.into_shape((n as usize, 1)).unwrap();
-    let mut ground_cost = ot::metrics::dist(
-        &x_reshaped,
-        &x_reshaped,
-        SqEuclidean,
-    );
+    let mut ground_cost = ot::metrics::dist(&x_reshaped, &x_reshaped, SqEuclidean);
     ground_cost = &ground_cost / *ground_cost.max().unwrap();
 
-    let result = match ot::exact::EarthMovers::new(
-        &mut source_mass,
-        &mut target_mass,
-        &mut ground_cost,
-    ).solve() {
-        Ok(result) => result,
-        Err(error) => panic!("{:?}", error),
-    };
+    let result =
+        match ot::exact::EarthMovers::new(&mut source_mass, &mut target_mass, &mut ground_cost)
+            .solve()
+        {
+            Ok(result) => result,
+            Err(error) => panic!("{:?}", error),
+        };
 
     println!("result: {:?}", result);
 
@@ -99,8 +94,9 @@ fn sinkhorn_integration_test() {
         &source_mass,
         &target_mass,
         &ground_cost,
-        gamma)
-        .solve()
+        gamma,
+    )
+    .solve()
     {
         Ok(result) => result,
         Err(err) => panic!("{:?}", err),
@@ -211,11 +207,7 @@ fn unbalanced_sinkhorn_integration_test() {
 
     // Compute ground cost matrix - Squared Euclidean distance
     let x_reshaped: Array2<f64> = x.into_shape((n as usize, 1)).unwrap();
-    let mut ground_cost = ot::metrics::dist(
-        &x_reshaped,
-        &x_reshaped,
-        SqEuclidean,
-    );
+    let mut ground_cost = ot::metrics::dist(&x_reshaped, &x_reshaped, SqEuclidean);
     ground_cost = &ground_cost / *ground_cost.max().unwrap();
 
     let result = match ot::unbalanced::sinkhorn_knopp_unbalanced(

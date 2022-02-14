@@ -105,16 +105,18 @@ pub fn estimate_dual_null_weights(
 
 /// Convert FastTransport error codes to EMDErrors
 pub fn check_result(result_code: FastTransportErrorCode) -> Result<(), OTError> {
-
     match result_code {
-
         // If optimal, result is ok
         FastTransportErrorCode::IsOptimal => Ok(()),
         // All other codes are error codes...
-        FastTransportErrorCode::IsInfeasible => Err(OTError::ExactOTError { source: FastTransportErrorCode::IsInfeasible } ),
-        FastTransportErrorCode::IsUnbounded => Err(OTError::ExactOTError { source: FastTransportErrorCode::IsUnbounded } ),
-        FastTransportErrorCode::IsMaxIterReached => Err(OTError::ExactOTError { source: FastTransportErrorCode::IsMaxIterReached } ),
-
+        FastTransportErrorCode::IsInfeasible => Err(OTError::ExactOTError {
+            source: FastTransportErrorCode::IsInfeasible,
+        }),
+        FastTransportErrorCode::IsUnbounded => Err(OTError::ExactOTError {
+            source: FastTransportErrorCode::IsUnbounded,
+        }),
+        FastTransportErrorCode::IsMaxIterReached => Err(OTError::ExactOTError {
+            source: FastTransportErrorCode::IsMaxIterReached,
+        }),
     }
-
 }

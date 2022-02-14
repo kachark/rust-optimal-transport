@@ -2,34 +2,37 @@
 use ndarray::prelude::*;
 use ndarray_linalg::norm;
 
-use crate::{OTSolver, OTError};
+use crate::{OTError, OTSolver};
 
-
-// TODO:
-// non-consuming builder pattern to configure the OT solver
-// do we need a trait for OTSolvers? solve() -> Result<_, OTError>, iterations(), threshold()
-// The OT solvers are just solving, they don't care about the data
-// Transport object? {source, target, weights, cost}
-// solver owns the source data, user passes target and cost?
-
-// SinkhornKnopp::new(source, target, cost).reg(1E-3).solve()
-
+/// Solves the entropic regularization optimal transport problem using the Sinkhorn-Knopp algorithm
+/// and returns the OT matrix
+/// source_weights: Weights on samples from the source distribution
+/// target_weights: Weights on samples from the target distribution
+/// cost: Distance between samples in the source and target distributions
+/// reg: Entropy regularization term > 0
+/// max_iter: Max number of iterations (default = 1000)
+/// threshold: Error convergence threshold (> 0) (default = 1E-9)
 pub struct SinkhornKnopp<'a> {
     source_weights: &'a Array1<f64>,
     target_weights: &'a Array1<f64>,
     cost: &'a Array2<f64>,
-    regularization: f64,
+    reg: f64,
     max_iter: i32,
     threshold: f64,
 }
 
 impl<'a> SinkhornKnopp<'a> {
-    pub fn new(source_weights: &'a Array1<f64>, target_weights: &'a Array1<f64>, cost: &'a Array2<f64>, regularization: f64) -> Self {
+    pub fn new(
+        source_weights: &'a Array1<f64>,
+        target_weights: &'a Array1<f64>,
+        cost: &'a Array2<f64>,
+        reg: f64,
+    ) -> Self {
         Self {
             source_weights,
             target_weights,
             cost,
-            regularization,
+            reg,
             max_iter: 1000,
             threshold: 1E-9,
         }
@@ -45,19 +48,16 @@ impl<'a> SinkhornKnopp<'a> {
         self
     }
 
-    pub fn regularization<'b>(&'b mut self, regularization: f64) -> &'b mut Self {
-        self.regularization = regularization;
+    pub fn reg<'b>(&'b mut self, reg: f64) -> &'b mut Self {
+        self.reg = reg;
         self
     }
-
 }
 
 impl<'a> OTSolver for SinkhornKnopp<'a> {
-
     /// Ensures dimensions of the source and target measures are consistent with the
     /// cost matrix dimensions
     fn check_shape(&self) -> Result<(), OTError> {
-
         let mshape = self.cost.shape();
         let m0 = mshape[0];
         let m1 = mshape[1];
@@ -75,26 +75,25 @@ impl<'a> OTSolver for SinkhornKnopp<'a> {
         }
 
         Ok(())
-
     }
 
     fn solve(&mut self) -> Result<Array2<f64>, OTError> {
-
         self.check_shape()?;
+
+        if self.reg <= 0. {
+            return Err(OTError::ArgError("Regularization term <= 0".to_string()));
+        }
 
         sinkhorn_knopp(
             self.source_weights,
             self.target_weights,
             self.cost,
-            self.regularization,
+            self.reg,
             Some(self.max_iter),
-            Some(self.threshold)
+            Some(self.threshold),
         )
-
     }
-
 }
-
 
 /// Solves the entropic regularization optimal transport problem and returns the OT matrix
 /// a: Source sample weights (defaults to uniform weight if empty)
@@ -111,14 +110,13 @@ pub(crate) fn sinkhorn_knopp(
     num_iter_max: Option<i32>,
     stop_threshold: Option<f64>,
 ) -> Result<Array2<f64>, OTError> {
-
     let mut err: f64;
+    let mut ktu;
+    let mut v_prev;
     let kp;
     let k_transpose;
     let dim_a = a.len();
     let dim_b = b.len();
-    let mut ktu;
-    let mut v_prev;
 
     // Defaults
     let iterations = match num_iter_max {
@@ -136,21 +134,20 @@ pub(crate) fn sinkhorn_knopp(
     let mut v = Array1::<f64>::from_elem(dim_b, 1. / (dim_b as f64));
 
     // K = exp(-M/reg)
-    let f = |ele: f64| (-ele/reg).exp();
+    let f = |ele: f64| (-ele / reg).exp();
     let k = M.clone().mapv_into(f);
 
     let a_cache = a.clone();
     let b_cache = b.clone();
 
     // Kp = (1./a) * K
-    let numerator: Array1<f64> = a_cache.mapv_into(|a| 1./a);
+    let numerator: Array1<f64> = a_cache.mapv_into(|a| 1. / a);
     kp = numerator.into_shape((dim_a, 1)).unwrap() * &k;
 
     // K.transpose()
     k_transpose = k.t();
 
     for count in 0..iterations {
-
         v_prev = v.clone();
 
         // Update v
@@ -164,7 +161,7 @@ pub(crate) fn sinkhorn_knopp(
         azip!((u in &mut u, &kpdotv in &kp.dot(&v)) *u = 1. / kpdotv);
 
         if count % 10 == 0 {
-            err = norm::Norm::norm_l1( &(&v - &v_prev) );
+            err = norm::Norm::norm_l1(&(&v - &v_prev));
 
             if err < stop {
                 break;
@@ -173,7 +170,6 @@ pub(crate) fn sinkhorn_knopp(
     }
 
     Ok(u.into_shape((dim_a, 1)).unwrap() * k * v.into_shape((1, dim_b)).unwrap())
-
 }
 
 #[cfg(test)]
@@ -181,7 +177,6 @@ mod tests {
 
     use ndarray::prelude::*;
 
-    use super::SinkhornKnopp;
     use crate::OTSolver;
 
     #[test]
@@ -202,7 +197,7 @@ mod tests {
     }
 
     #[test]
-    fn test_SinkhornKnopp() {
+    fn test_sinkhorn_builder() {
         let a = array![0.5, 0.5];
         let b = array![0.5, 0.5];
         let reg = 1.0;

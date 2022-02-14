@@ -2,8 +2,8 @@ use ndarray::prelude::*;
 use ndarray_stats::QuantileExt;
 
 use ot::exact::EarthMovers;
-use ot::OTSolver;
 use ot::metrics::MetricType::SqEuclidean;
+use ot::OTSolver;
 use rust_optimal_transport as ot;
 
 mod plot;
@@ -38,14 +38,11 @@ fn main() {
     ground_cost = &ground_cost / *max_cost;
 
     // Compute optimal transport matrix as the Earth Mover's Distance
-    let ot_matrix = match EarthMovers::new(
-        &mut source_mass,
-        &mut target_mass,
-        &mut ground_cost,
-    ).solve() {
-        Ok(result) => result,
-        Err(error) => panic!("{:?}", error),
-    };
+    let ot_matrix =
+        match EarthMovers::new(&mut source_mass, &mut target_mass, &mut ground_cost).solve() {
+            Ok(result) => result,
+            Err(error) => panic!("{:?}", error),
+        };
 
     // Plot using matplotlib
     match plot::plot_py(&source, &target, &ot_matrix) {

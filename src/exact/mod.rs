@@ -1,9 +1,9 @@
 mod ffi;
 mod utils;
 
-use std::fmt;
-use std::error::Error;
 use ndarray::prelude::*;
+use std::error::Error;
+use std::fmt;
 
 use crate::OTSolver;
 
@@ -28,7 +28,7 @@ pub enum FastTransportErrorCode {
     IsMaxIterReached,
 }
 
-impl Error for FastTransportErrorCode { }
+impl Error for FastTransportErrorCode {}
 
 impl fmt::Display for FastTransportErrorCode {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -53,23 +53,30 @@ impl From<i32> for FastTransportErrorCode {
     }
 }
 
+/// Solves the exact OT Earth Movers Distance using the FastTransport LP solver
+/// source_weights: Weights on samples from the source distribution
+/// target_weights: Weights on samples from the target distribution
+/// cost: Distance between samples in the source and target distributions
+/// num_iter_max: maximum number of iterations before stopping the optimization algorithm if it has
+/// not converged (default = 100000)
 pub struct EarthMovers<'a> {
     source_weights: &'a mut Array1<f64>,
     target_weights: &'a mut Array1<f64>,
     cost: &'a mut Array2<f64>,
     max_iter: i32,
-    center_dual: bool,
 }
 
 impl<'a> EarthMovers<'a> {
-    pub fn new(source_weights: &'a mut Array1<f64>, target_weights: &'a mut Array1<f64>, cost: &'a mut Array2<f64>) -> Self {
-
+    pub fn new(
+        source_weights: &'a mut Array1<f64>,
+        target_weights: &'a mut Array1<f64>,
+        cost: &'a mut Array2<f64>,
+    ) -> Self {
         Self {
             source_weights,
             target_weights,
             cost,
             max_iter: 100000,
-            center_dual: true,
         }
     }
 
@@ -77,18 +84,10 @@ impl<'a> EarthMovers<'a> {
         self.max_iter = max_iter;
         self
     }
-
-    pub fn center_dual<'b>(&'b mut self, center: bool) -> &'b mut Self {
-        self.center_dual = center;
-        self
-    }
-
 }
 
 impl<'a> OTSolver for EarthMovers<'a> {
-
     fn check_shape(&self) -> Result<(), OTError> {
-
         let mshape = self.cost.shape();
         let m0 = mshape[0];
         let m1 = mshape[1];
@@ -105,89 +104,42 @@ impl<'a> OTSolver for EarthMovers<'a> {
         }
 
         Ok(())
-
     }
 
     fn solve(&mut self) -> Result<Array2<f64>, OTError> {
-
         self.check_shape()?;
 
         *self.target_weights *= self.source_weights.sum() / self.target_weights.sum();
 
-        emd(self.source_weights,
+        emd(
+            self.source_weights,
             self.target_weights,
             self.cost,
             Some(self.max_iter),
-            Some(self.center_dual)
-            )
-
+        )
     }
-
 }
-
 
 /// a: Source sample weights (defaults to uniform weight if empty)
 /// b: Target sample weights (defaults to uniform weight if empty)
 /// M: Loss matrix (row-major)
 /// num_iter_max: maximum number of iterations before stopping the optimization algorithm if it has
 /// not converged (default = 100000)
-/// center_dual: If True, centers the dual potential using function (default = true)
 #[allow(non_snake_case)]
 pub(crate) fn emd(
     a: &mut Array1<f64>,
     b: &mut Array1<f64>,
     M: &mut Array2<f64>,
     num_iter_max: Option<i32>,
-    center_dual: Option<bool>,
 ) -> Result<Array2<f64>, OTError> {
-
     // Defaults
     let iterations = match num_iter_max {
         Some(val) => val,
         None => 100000,
     };
 
-    let center = match center_dual {
-        Some(val) => val,
-        None => false,
-    };
-
-    // binary indexing of non-zero weights
-    let asel = a.mapv(|a| a > 0.);
-    let bsel = b.mapv(|b| b > 0.);
-
-    // sum(~asel)
-    let not_asel_sum = (!asel).iter().fold(0., |acc, x| {
-        if *x {
-            acc + 1.
-        } else {
-            acc
-        }
-    });
-
-    // sum(~bsel)
-    let not_bsel_sum = (!bsel).iter().fold(0., |acc, x| {
-        if *x {
-            acc + 1.
-        } else {
-            acc
-        }
-    });
-
     // Call FastTransport via wrapper
-    let (G, _cost, mut u, mut v, result_code) = emd_c(a, b, M, iterations);
-
-    if center {
-        let result = center_ot_dual(&u, &v, Some(a), Some(b));
-        u = result.0;
-        v = result.1;
-    }
-
-    if not_asel_sum > 1. || not_bsel_sum > 1. {
-        let result = estimate_dual_null_weights(&u, &v, a, b, M);
-        u = result.0;
-        v = result.1;
-    }
+    let (G, _cost, mut _u, mut _v, result_code) = emd_c(a, b, M, iterations);
 
     // Propogate errors if there are any
     check_result(FastTransportErrorCode::from(result_code))?;
@@ -198,8 +150,8 @@ pub(crate) fn emd(
 #[cfg(test)]
 mod tests {
 
-    use ndarray::array;
     use crate::OTSolver;
+    use ndarray::array;
 
     #[allow(non_snake_case)]
     #[test]
@@ -208,7 +160,7 @@ mod tests {
         let mut b = array![0.5, 0.5];
         let mut M = array![[0.0, 1.0], [1.0, 0.0]];
 
-        let gamma = match super::emd(&mut a, &mut b, &mut M, None, None) {
+        let gamma = match super::emd(&mut a, &mut b, &mut M, None) {
             Ok(result) => result,
             Err(error) => panic!("{:?}", error),
         };
@@ -221,13 +173,12 @@ mod tests {
     }
 
     #[test]
-    fn test_EarthMovers() {
-
+    fn test_earthmovers_builder() {
         let mut a = array![0.5, 0.5];
         let mut b = array![0.5, 0.5];
-        let mut M = array![[0.0, 1.0], [1.0, 0.0]];
+        let mut m = array![[0.0, 1.0], [1.0, 0.0]];
 
-        let test = match super::EarthMovers::new(&mut a, &mut b, &mut M).solve() {
+        let test = match super::EarthMovers::new(&mut a, &mut b, &mut m).solve() {
             Ok(result) => result,
             Err(error) => panic!("{:?}", error),
         };

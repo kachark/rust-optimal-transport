@@ -4,10 +4,10 @@ use thiserror::Error;
 extern crate blas_src;
 
 pub mod exact;
-pub mod regularized;
-pub mod unbalanced;
 pub mod metrics;
 pub mod ndarray_logical;
+pub mod regularized;
+pub mod unbalanced;
 pub mod utils;
 
 #[derive(Error, Debug)]
@@ -46,7 +46,6 @@ pub enum OTError {
     //     #[from]
     //     source: regularized::greenkhorn::GreenkhornError,
     // },
-
     #[error("Invalid argument: '{0}'")]
     ArgError(String),
 
@@ -61,6 +60,3 @@ pub trait OTSolver {
     fn check_shape(&self) -> Result<(), OTError>;
     fn solve(&mut self) -> Result<ndarray::Array2<f64>, OTError>;
 }
-
-use crate::metrics::MetricType::SqEuclidean;
-
