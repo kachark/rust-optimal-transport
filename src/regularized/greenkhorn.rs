@@ -2,7 +2,103 @@ use anyhow::anyhow;
 use ndarray::prelude::*;
 use ndarray_stats::QuantileExt;
 
-use crate::OTError;
+use crate::{OTError, OTSolver};
+
+/// Solves the entropic regularization optimal transport problem and return the OT matrix
+/// Uses the Greedy Sinkhorn method:
+/// Near-linear time approximation algorithms for optimal transport via Sinkhorn iteration
+/// by Jason Altschuler, Jonathan Weed, Philippe Rigollet
+///
+/// source_weights: Weights on samples from the source distribution
+/// target_weights: Weights on samples from the target distribution
+/// cost: Distance between samples in the source and target distributions
+/// reg: Entropy regularization term > 0
+/// max_iter: Max number of iterations (default = 1000)
+/// threshold: Error convergence threshold (> 0) (default = 1E-9)
+pub struct Greenkhorn<'a> {
+    source_weights: &'a Array1<f64>,
+    target_weights: &'a Array1<f64>,
+    cost: &'a Array2<f64>,
+    reg: f64,
+    max_iter: i32,
+    threshold: f64,
+}
+
+impl<'a> Greenkhorn<'a> {
+    pub fn new(
+        source_weights: &'a Array1<f64>,
+        target_weights: &'a Array1<f64>,
+        cost: &'a Array2<f64>,
+        reg: f64,
+    ) -> Self {
+        Self {
+            source_weights,
+            target_weights,
+            cost,
+            reg,
+            max_iter: 1000,
+            threshold: 1E-9,
+        }
+    }
+
+    pub fn iterations<'b>(&'b mut self, max_iter: i32) -> &'b mut Self {
+        self.max_iter = max_iter;
+        self
+    }
+
+    pub fn threshold<'b>(&'b mut self, threshold: f64) -> &'b mut Self {
+        self.threshold = threshold;
+        self
+    }
+
+    pub fn reg<'b>(&'b mut self, reg: f64) -> &'b mut Self {
+        self.reg = reg;
+        self
+    }
+}
+
+impl<'a> OTSolver for Greenkhorn<'a> {
+    /// Ensures dimensions of the source and target measures are consistent with the
+    /// cost matrix dimensions
+    fn check_shape(&self) -> Result<(), OTError> {
+        let mshape = self.cost.shape();
+        let m0 = mshape[0];
+        let m1 = mshape[1];
+        let dim_a = self.source_weights.len();
+        let dim_b = self.target_weights.len();
+
+        // Check dimensions
+        if dim_a != m0 || dim_b != m1 {
+            return Err(OTError::WeightDimensionError {
+                dim_a,
+                dim_b,
+                dim_m_0: m0,
+                dim_m_1: m1,
+            });
+        }
+
+        Ok(())
+    }
+
+    fn solve(&mut self) -> Result<Array2<f64>, OTError> {
+        self.check_shape()?;
+
+        if self.reg <= 0. {
+            return Err(OTError::ArgError("Regularization term <= 0".to_string()));
+        }
+
+        greenkhorn(
+            self.source_weights,
+            self.target_weights,
+            self.cost,
+            self.reg,
+            Some(self.max_iter),
+            Some(self.threshold),
+        )
+    }
+}
+
+
 
 /// Solves the entropic regularization optimal transport problem and return the OT matrix
 /// Uses the Greedy Sinkhorn method:
@@ -15,9 +111,9 @@ use crate::OTError;
 /// reg: Entropy regularization term > 0
 /// num_iter_max: Max number of iterations (default = 1000)
 /// stop_threshold: Stop threshold on error (> 0) (default = 1E-6)
-pub fn greenkhorn(
-    a: &mut Array1<f64>,
-    b: &mut Array1<f64>,
+pub(crate) fn greenkhorn(
+    a: &Array1<f64>,
+    b: &Array1<f64>,
     M: &Array2<f64>,
     reg: f64,
     num_iter_max: Option<i32>,
@@ -34,67 +130,20 @@ pub fn greenkhorn(
         None => 1E-9,
     };
 
-    let mshape = M.shape();
-    let m0 = mshape[0];
-    let m1 = mshape[1];
-    let dim_a;
-    let dim_b;
+    let dim_a = a.len();
+    let dim_b = b.len();
     let mut stop_val;
-
-    // if a and b empty, default to uniform distribution
-    if a.is_empty() {
-        *a = Array1::from_vec(vec![1f64 / (m0 as f64); m0]);
-        dim_a = m0;
-    } else {
-        dim_a = a.len();
-    }
-
-    if b.is_empty() {
-        *b = Array1::from_vec(vec![1f64 / (m1 as f64); m1]);
-        dim_b = m1;
-    } else {
-        dim_b = b.len();
-    }
-
-    // Check dimensions
-    if dim_a != m0 || dim_b != m1 {
-        return Err(OTError::WeightDimensionError {
-            dim_a,
-            dim_b,
-            dim_m_0: m0,
-            dim_m_1: m1,
-        });
-    }
-
-    // TODO: same mass can be lost by summing with machine precision
-    // // Ensure the same mass
-    // if a.sum() != b.sum() {
-    //     return Err( OTError::HistogramSumError{ mass_a: a.sum(), mass_b: b.sum() } )
-    // }
 
     let mut u = Array1::<f64>::from_vec(vec![1f64 / (dim_a as f64); dim_a]);
     let mut v = Array1::<f64>::from_vec(vec![1f64 / (dim_b as f64); dim_b]);
 
     // K = exp(-M/reg)
-    let k = Array2::from_shape_fn((mshape[0], mshape[1]), |(i, j)| (-M[[i, j]] / reg).exp());
+    let f = |ele: f64| (-ele / reg).exp();
+    let k = M.clone().mapv_into(f);
 
     let mut G = &u.diag().t() * &k * &v.diag();
-
-    // G.sum(1) - a
-    let mut viol: Array1<f64> = G
-        .sum_axis(Axis(1))
-        .iter()
-        .enumerate()
-        .map(|(i, sum_i)| sum_i - a[i])
-        .collect();
-
-    // G.sum(0) - b
-    let mut viol_2: Array1<f64> = G
-        .sum_axis(Axis(0))
-        .iter()
-        .enumerate()
-        .map(|(i, sum_i)| sum_i - b[i])
-        .collect();
+    let mut viol = &G.sum_axis(Axis(1)) - a;
+    let mut viol_2 = &G.sum_axis(Axis(0)) - b;
 
     for _ in 0..iterations {
         // Absolute values
@@ -189,15 +238,16 @@ pub fn greenkhorn(
 mod tests {
 
     use ndarray::prelude::*;
+    use crate::OTSolver;
 
     #[test]
     fn test_greenkhorn() {
-        let mut a = array![0.5, 0.5];
-        let mut b = array![0.5, 0.5];
+        let a = array![0.5, 0.5];
+        let b = array![0.5, 0.5];
         let reg = 1.0;
-        let mut m = array![[0.0, 1.0], [1.0, 0.0]];
+        let m = array![[0.0, 1.0], [1.0, 0.0]];
 
-        let result = match super::greenkhorn(&mut a, &mut b, &mut m, reg, None, None) {
+        let result = match super::greenkhorn(&a, &b, &m, reg, None, None) {
             Ok(result) => result,
             Err(error) => panic!("{:?}", error),
         };
@@ -208,4 +258,30 @@ mod tests {
 
         assert!(result.relative_eq(&truth, 1E-6, 1E-2));
     }
+
+    #[test]
+    fn test_greenkhorn_builder() {
+        let a = array![0.5, 0.5];
+        let b = array![0.5, 0.5];
+        let reg = 1.0;
+        let m = array![[0.0, 1.0], [1.0, 0.0]];
+
+        let result = match super::Greenkhorn::new(
+            &a,
+            &b,
+            &m,
+            reg
+        ).solve()
+        {
+            Ok(result) => result,
+            Err(error) => panic!("{:?}", error),
+        };
+
+        println!("{:?}", result);
+
+        let truth = array![[0.36552929, 0.13447071], [0.13447071, 0.36552929]];
+
+        assert!(result.relative_eq(&truth, 1E-6, 1E-2));
+    }
+
 }

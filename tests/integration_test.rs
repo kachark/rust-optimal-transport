@@ -152,14 +152,12 @@ fn greenkhorn_integration_test() {
     let mut ground_cost = ot::metrics::dist(&source, &target, SqEuclidean);
     ground_cost = &ground_cost / *ground_cost.max().unwrap();
 
-    let result = match ot::regularized::greenkhorn::greenkhorn(
+    let result = match ot::regularized::greenkhorn::Greenkhorn::new(
         &mut source_mass,
         &mut target_mass,
         &mut ground_cost,
         gamma,
-        None,
-        None,
-    ) {
+    ).solve() {
         Ok(result) => result,
         Err(err) => panic!("{:?}", err),
     };
