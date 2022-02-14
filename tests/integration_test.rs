@@ -2,6 +2,7 @@ use ndarray::prelude::*;
 use ndarray_stats::QuantileExt;
 use rust_optimal_transport as ot;
 use ot::OTSolver;
+use ot::metrics::MetricType::SqEuclidean;
 
 #[test]
 fn emd_integration_test() {
@@ -30,7 +31,7 @@ fn emd_integration_test() {
     let mut ground_cost = ot::metrics::dist(
         &x_reshaped,
         &x_reshaped,
-        ot::metrics::MetricType::SqEuclidean,
+        SqEuclidean,
     );
     ground_cost = &ground_cost / *ground_cost.max().unwrap();
 
@@ -86,11 +87,11 @@ fn sinkhorn_integration_test() {
     ];
 
     // Uniform distribution on the source and target densities
-    let mut source_mass = Array1::<f64>::from_elem(n, 1. / (n as f64));
-    let mut target_mass = Array1::<f64>::from_elem(n, 1. / (n as f64));
+    let source_mass = Array1::<f64>::from_elem(n, 1. / (n as f64));
+    let target_mass = Array1::<f64>::from_elem(n, 1. / (n as f64));
 
     // Compute ground cost matrix - Euclidean distance
-    let mut ground_cost = ot::metrics::dist(&source, &target, ot::metrics::MetricType::SqEuclidean);
+    let mut ground_cost = ot::metrics::dist(&source, &target, SqEuclidean);
     ground_cost = &ground_cost / *ground_cost.max().unwrap();
 
     // Solve Sinkhorn Distance
@@ -152,7 +153,7 @@ fn greenkhorn_integration_test() {
     let mut target_mass = Array1::<f64>::from_elem(n, 1. / (n as f64));
 
     // Compute ground cost matrix - Euclidean distance
-    let mut ground_cost = ot::metrics::dist(&source, &target, ot::metrics::MetricType::SqEuclidean);
+    let mut ground_cost = ot::metrics::dist(&source, &target, SqEuclidean);
     ground_cost = &ground_cost / *ground_cost.max().unwrap();
 
     let result = match ot::regularized::greenkhorn::greenkhorn(
@@ -213,7 +214,7 @@ fn unbalanced_sinkhorn_integration_test() {
     let mut ground_cost = ot::metrics::dist(
         &x_reshaped,
         &x_reshaped,
-        ot::metrics::MetricType::SqEuclidean,
+        SqEuclidean,
     );
     ground_cost = &ground_cost / *ground_cost.max().unwrap();
 

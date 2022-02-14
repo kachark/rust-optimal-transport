@@ -34,7 +34,9 @@ rust-optimal-transport = "0.1"
 ```rust
 use rust_optimal_transport as ot;
 
-use ot::exact::emd;
+use ot::exact::EarthMovers;
+use ot::OTSolver;
+use ot::metrics::MetricType::SqEuclidean;
 ```
 
 * Compute OT matrix as the Earth Mover's Distance
@@ -55,22 +57,23 @@ let cov_target = array![[1., -0.8], [-0.8, 1.]];
 let source = ot::utils::sample_2D_gauss(n_samples, &mu_source, &cov_source).unwrap();
 let target = ot::utils::sample_2D_gauss(n_samples, &mu_target, &cov_target).unwrap();
 
-// Uniform distribution on the source and target samples
-let mut source_mass = Array1::<f64>::from_elem(n, 1. / (n as f64));
-let mut target_mass = Array1::<f64>::from_elem(n, 1. / (n as f64));
+// Uniform weights on the source and target distributions
+let mut source_weights = Array1::<f64>::from_elem(n, 1. / (n as f64));
+let mut target_weights = Array1::<f64>::from_elem(n, 1. / (n as f64));
 
 // Compute ground cost matrix - Squared Euclidean distance
-let mut ground_cost = ot::metrics::dist(&source, &target, ot::utils::metrics::MetricType::SqEuclidean);
-let max_cost = ground_cost.max().unwrap();
+let mut cost = ot::metrics::dist(&source, &target, SqEuclidean);
+let max_cost = cost.max().unwrap();
 
 // Normalize cost matrix for numerical stability
-ground_cost = &ground_cost / *max_cost;
+cost = &cost / *max_cost;
 
 // Compute optimal transport matrix as the Earth Mover's Distance
-let ot_matrix = match emd(&mut source_mass, &mut target_mass, &mut ground_cost, None, None) {
-    Ok(result) => result,
-    Err(error) => panic!("{:?}", error)
-};
+let ot_matrix = match EarthMovers::new(
+    &mut source_weights,
+    &mut target_weights,
+    &mut ground_cost
+).solve()?;
 
 ```
 

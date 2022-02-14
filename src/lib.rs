@@ -62,3 +62,5 @@ pub trait OTSolver {
     fn solve(&mut self) -> Result<ndarray::Array2<f64>, OTError>;
 }
 
+use crate::metrics::MetricType::SqEuclidean;
+

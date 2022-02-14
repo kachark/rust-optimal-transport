@@ -54,7 +54,7 @@ impl From<i32> for FastTransportErrorCode {
 }
 
 pub struct EarthMovers<'a> {
-    sample_weights: &'a mut Array1<f64>,
+    source_weights: &'a mut Array1<f64>,
     target_weights: &'a mut Array1<f64>,
     cost: &'a mut Array2<f64>,
     max_iter: i32,
@@ -62,10 +62,10 @@ pub struct EarthMovers<'a> {
 }
 
 impl<'a> EarthMovers<'a> {
-    pub fn new(sample_weights: &'a mut Array1<f64>, target_weights: &'a mut Array1<f64>, cost: &'a mut Array2<f64>) -> Self {
+    pub fn new(source_weights: &'a mut Array1<f64>, target_weights: &'a mut Array1<f64>, cost: &'a mut Array2<f64>) -> Self {
 
         Self {
-            sample_weights,
+            source_weights,
             target_weights,
             cost,
             max_iter: 100000,
@@ -92,7 +92,7 @@ impl<'a> OTSolver for EarthMovers<'a> {
         let mshape = self.cost.shape();
         let m0 = mshape[0];
         let m1 = mshape[1];
-        let dim_a = self.sample_weights.len();
+        let dim_a = self.source_weights.len();
         let dim_b = self.target_weights.len();
 
         if dim_a != m0 || dim_b != m1 {
@@ -112,9 +112,9 @@ impl<'a> OTSolver for EarthMovers<'a> {
 
         self.check_shape()?;
 
-        *self.target_weights *= self.sample_weights.sum() / self.target_weights.sum();
+        *self.target_weights *= self.source_weights.sum() / self.target_weights.sum();
 
-        emd(self.sample_weights,
+        emd(self.source_weights,
             self.target_weights,
             self.cost,
             Some(self.max_iter),
