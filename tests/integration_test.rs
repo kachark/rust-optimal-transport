@@ -1,6 +1,7 @@
 use ndarray::prelude::*;
 use ndarray_stats::QuantileExt;
 use rust_optimal_transport as ot;
+use ot::OTSolver;
 
 #[test]
 fn emd_integration_test() {
@@ -95,14 +96,13 @@ fn sinkhorn_integration_test() {
     ground_cost = &ground_cost / *ground_cost.max().unwrap();
 
     // Solve Sinkhorn Distance
-    let result = match ot::regularized::sinkhorn::sinkhorn_knopp(
-        &mut source_mass,
-        &mut target_mass,
-        &mut ground_cost,
-        gamma,
-        None,
-        None,
-    ) {
+    let result = match ot::regularized::sinkhorn::SinkhornKnopp::new(
+        &source_mass,
+        &target_mass,
+        &ground_cost,
+        gamma)
+        .solve()
+    {
         Ok(result) => result,
         Err(err) => panic!("{:?}", err),
     };

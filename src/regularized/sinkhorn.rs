@@ -2,7 +2,97 @@
 use ndarray::prelude::*;
 use ndarray_linalg::norm;
 
-use crate::OTError;
+use crate::{OTSolver, OTError};
+
+
+// TODO:
+// non-consuming builder pattern to configure the OT solver
+// do we need a trait for OTSolvers? solve() -> Result<_, OTError>, iterations(), threshold()
+// The OT solvers are just solving, they don't care about the data
+// Transport object? {source, target, weights, cost}
+// solver owns the source data, user passes target and cost?
+
+// SinkhornKnopp::new(source, target, cost).reg(1E-3).solve()
+
+pub struct SinkhornKnopp<'a> {
+    source_weights: &'a Array1<f64>,
+    target_weights: &'a Array1<f64>,
+    cost: &'a Array2<f64>,
+    regularization: f64,
+    max_iter: i32,
+    threshold: f64,
+}
+
+impl<'a> SinkhornKnopp<'a> {
+    pub fn new(source_weights: &'a Array1<f64>, target_weights: &'a Array1<f64>, cost: &'a Array2<f64>, regularization: f64) -> Self {
+        Self {
+            source_weights,
+            target_weights,
+            cost,
+            regularization,
+            max_iter: 1000,
+            threshold: 1E-9,
+        }
+    }
+
+    pub fn iterations<'b>(&'b mut self, max_iter: i32) -> &'b mut Self {
+        self.max_iter = max_iter;
+        self
+    }
+
+    pub fn threshold<'b>(&'b mut self, threshold: f64) -> &'b mut Self {
+        self.threshold = threshold;
+        self
+    }
+
+    pub fn regularization<'b>(&'b mut self, regularization: f64) -> &'b mut Self {
+        self.regularization = regularization;
+        self
+    }
+
+}
+
+impl<'a> OTSolver for SinkhornKnopp<'a> {
+
+    /// Ensures dimensions of the source and target measures are consistent with the
+    /// cost matrix dimensions
+    fn check_shape(&self) -> Result<(), OTError> {
+
+        let mshape = self.cost.shape();
+        let m0 = mshape[0];
+        let m1 = mshape[1];
+        let dim_a = self.source_weights.len();
+        let dim_b = self.target_weights.len();
+
+        // Check dimensions
+        if dim_a != m0 || dim_b != m1 {
+            return Err(OTError::WeightDimensionError {
+                dim_a,
+                dim_b,
+                dim_m_0: m0,
+                dim_m_1: m1,
+            });
+        }
+
+        Ok(())
+
+    }
+
+    fn solve(&self) -> Result<Array2<f64>, OTError> {
+
+        sinkhorn_knopp(
+            self.source_weights,
+            self.target_weights,
+            self.cost,
+            self.regularization,
+            Some(self.max_iter),
+            Some(self.threshold)
+        )
+
+    }
+
+}
+
 
 /// Solves the entropic regularization optimal transport problem and returns the OT matrix
 /// a: Source sample weights (defaults to uniform weight if empty)
@@ -11,19 +101,20 @@ use crate::OTError;
 /// reg: Entropy regularization term > 0
 /// num_iter_max: Max number of iterations (default = 1000)
 /// stop_threshold: Stop threshold on error (> 0) (default = 1E-6)
-pub fn sinkhorn_knopp(
-    a: &mut Array1<f64>,
-    b: &mut Array1<f64>,
+pub(crate) fn sinkhorn_knopp(
+    a: &Array1<f64>,
+    b: &Array1<f64>,
     M: &Array2<f64>,
     reg: f64,
     num_iter_max: Option<i32>,
     stop_threshold: Option<f64>,
 ) -> Result<Array2<f64>, OTError> {
-    // TODO: check for NaN, inf, etc.
 
     let mut err: f64;
     let kp;
     let k_transpose;
+    let dim_a = a.len();
+    let dim_b = b.len();
     let mut ktu;
     let mut v_prev;
 
@@ -37,37 +128,6 @@ pub fn sinkhorn_knopp(
         Some(val) => val,
         None => 1E-9,
     };
-
-    let mshape = M.shape();
-    let m0 = mshape[0];
-    let m1 = mshape[1];
-    let dim_a;
-    let dim_b;
-
-    // if a and b empty, default to uniform distribution
-    if a.is_empty() {
-        *a = Array1::<f64>::from_elem(m0, 1. / (m0 as f64));
-        dim_a = m0;
-    } else {
-        dim_a = a.len();
-    }
-
-    if b.is_empty() {
-        *b = Array1::<f64>::from_elem(m1, 1. / (m1 as f64));
-        dim_b = m1;
-    } else {
-        dim_b = b.len();
-    }
-
-    // Check dimensions
-    if dim_a != m0 || dim_b != m1 {
-        return Err(OTError::WeightDimensionError {
-            dim_a,
-            dim_b,
-            dim_m_0: m0,
-            dim_m_1: m1,
-        });
-    }
 
     // we assume that no distances are null except those of the diagonal distances
     let mut u = Array1::<f64>::from_elem(dim_a, 1. / (dim_a as f64));
@@ -119,6 +179,9 @@ mod tests {
 
     use ndarray::prelude::*;
 
+    use super::SinkhornKnopp;
+    use crate::OTSolver;
+
     #[test]
     fn test_sinkhorn_knopp() {
         let mut a = array![0.5, 0.5];
@@ -127,6 +190,23 @@ mod tests {
         let mut m = array![[0.0, 1.0], [1.0, 0.0]];
 
         let result = match super::sinkhorn_knopp(&mut a, &mut b, &mut m, reg, None, None) {
+            Ok(result) => result,
+            Err(error) => panic!("{:?}", error),
+        };
+
+        let truth = array![[0.36552929, 0.13447071], [0.13447071, 0.36552929]];
+
+        assert!(result.relative_eq(&truth, 1E-6, 1E-2));
+    }
+
+    #[test]
+    fn test_SinkhornKnopp() {
+        let a = array![0.5, 0.5];
+        let b = array![0.5, 0.5];
+        let reg = 1.0;
+        let m = array![[0.0, 1.0], [1.0, 0.0]];
+
+        let result = match super::SinkhornKnopp::new(&a, &b, &m, reg).solve() {
             Ok(result) => result,
             Err(error) => panic!("{:?}", error),
         };

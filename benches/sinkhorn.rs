@@ -9,10 +9,11 @@ use rand::prelude::*;
 use rand::{Rng, SeedableRng};
 
 use rust_optimal_transport as ot;
-use ot::regularized::sinkhorn::sinkhorn_knopp;
+use ot::regularized::sinkhorn::SinkhornKnopp;
+use ot::OTSolver;
 
 #[derive(Clone)]
-struct SinkhornInput {
+struct SinkhornParams {
 
     n_samples: usize,
     source_mass: Array1<f64>,
@@ -24,7 +25,7 @@ struct SinkhornInput {
 
 }
 
-impl SinkhornInput {
+impl SinkhornParams {
 
     fn new(n_samples: usize) -> Self {
 
@@ -64,7 +65,7 @@ impl SinkhornInput {
 
 }
 
-impl fmt::Display for SinkhornInput {
+impl fmt::Display for SinkhornParams {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "Num samples: {}", self.n_samples)
     }
@@ -72,12 +73,12 @@ impl fmt::Display for SinkhornInput {
 
 fn sinkhorn_benchmark(c: &mut Criterion) {
 
-    let inputs_50 = SinkhornInput::new(50);
-    let inputs_100 = SinkhornInput::new(100);
-    let inputs_500 = SinkhornInput::new(500);
-    let inputs_1000 = SinkhornInput::new(1000);
-    let inputs_2000 = SinkhornInput::new(2000);
-    let inputs_5000 = SinkhornInput::new(5000);
+    let inputs_50 = SinkhornParams::new(50);
+    let inputs_100 = SinkhornParams::new(100);
+    let inputs_500 = SinkhornParams::new(500);
+    let inputs_1000 = SinkhornParams::new(1000);
+    let inputs_2000 = SinkhornParams::new(2000);
+    let inputs_5000 = SinkhornParams::new(5000);
 
     // Done setup
 
@@ -89,7 +90,11 @@ fn sinkhorn_benchmark(c: &mut Criterion) {
         group.bench_with_input(
             BenchmarkId::new("sinkhorn", input.n_samples), input,
             move |b, i| b.iter_with_large_drop(|| {
-                sinkhorn_knopp(&mut i.source_mass.clone(), &mut i.target_mass.clone(), &i.cost.clone(), i.reg, Some(i.num_iter_max), Some(i.threshold)).unwrap();
+                SinkhornKnopp::new(&i.source_mass, &i.target_mass, &i.cost, i.reg)
+                    .iterations(i.num_iter_max)
+                    .threshold(i.threshold)
+                    .solve()
+                    .unwrap();
             }),
         ).sample_size(n_runs);
 
@@ -102,13 +107,17 @@ fn sinkhorn_benchmark(c: &mut Criterion) {
 
 fn sinkhorn_benchmark_single(c: &mut Criterion) {
 
-    let inputs_500 = SinkhornInput::new(500);
+    let inputs_500 = SinkhornParams::new(500);
 
     // Done setup
 
     c.bench_with_input(
         BenchmarkId::new("sinkhorn_single", inputs_500.n_samples), &inputs_500, |b, i| b.iter_with_large_drop(|| {
-            sinkhorn_knopp(&mut i.source_mass.clone(), &mut i.target_mass.clone(), &i.cost.clone(), i.reg, Some(i.num_iter_max), Some(i.threshold)).unwrap();
+            SinkhornKnopp::new(&i.source_mass, &i.target_mass, &i.cost, i.reg)
+                .iterations(i.num_iter_max)
+                .threshold(i.threshold)
+                .solve()
+                .unwrap();
         }),
     );
 

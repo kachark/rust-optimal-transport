@@ -2,7 +2,8 @@ use ndarray::{prelude::*, stack};
 use ndarray_stats::QuantileExt;
 
 use rust_optimal_transport as ot;
-use ot::regularized::sinkhorn::sinkhorn_knopp;
+use ot::OTSolver;
+use ot::regularized::sinkhorn::SinkhornKnopp;
 
 mod plot;
 
@@ -48,14 +49,13 @@ fn main() {
     ground_cost = &ground_cost / *max_cost;
 
     // Compute optimal transport matrix as the Earth Mover's Distance
-    let ot_matrix = match sinkhorn_knopp(
-        &mut source_mass,
-        &mut target_mass,
-        &mut ground_cost,
-        reg,
-        None,
-        None,
-    ) {
+    let ot_matrix = match SinkhornKnopp::new(
+        &source_mass,
+        &target_mass,
+        &ground_cost,
+        reg)
+        .solve()
+    {
         Ok(result) => result,
         Err(error) => panic!("{:?}", error),
     };
