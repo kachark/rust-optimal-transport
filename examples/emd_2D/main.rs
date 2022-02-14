@@ -1,10 +1,8 @@
 use ndarray::prelude::*;
 use ndarray_stats::QuantileExt;
 
-use ot::exact::EarthMovers;
-use ot::metrics::MetricType::SqEuclidean;
-use ot::OTSolver;
 use rust_optimal_transport as ot;
+use ot::prelude::*;
 
 mod plot;
 
@@ -31,7 +29,7 @@ fn main() {
         Array1::<f64>::from_vec(vec![1f64 / (n_samples as f64); n_samples as usize]);
 
     // Compute ground cost matrix - Squared Euclidean distance
-    let mut ground_cost = ot::metrics::dist(&source, &target, SqEuclidean);
+    let mut ground_cost = dist(&source, &target, SqEuclidean);
     let max_cost = ground_cost.max().unwrap();
 
     // Normalize cost matrix for numerical stability

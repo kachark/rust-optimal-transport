@@ -45,10 +45,8 @@ This will link against an installed instance of OpenBLAS on your system. For mor
 
 ```rust
 use rust_optimal_transport as ot;
+use ot::prelude::*;
 
-use ot::exact::EarthMovers;
-use ot::OTSolver;
-use ot::metrics::MetricType::SqEuclidean;
 ```
 
 * Compute OT matrix as the Earth Mover's Distance
@@ -74,7 +72,7 @@ let mut source_weights = Array1::<f64>::from_elem(n, 1. / (n as f64));
 let mut target_weights = Array1::<f64>::from_elem(n, 1. / (n as f64));
 
 // Compute ground cost matrix - Squared Euclidean distance
-let mut cost = ot::metrics::dist(&source, &target, SqEuclidean);
+let mut cost = dist(&source, &target, SqEuclidean);
 let max_cost = cost.max().unwrap();
 
 // Normalize cost matrix for numerical stability

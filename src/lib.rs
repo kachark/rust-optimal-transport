@@ -9,6 +9,7 @@ pub mod ndarray_logical;
 pub mod regularized;
 pub mod unbalanced;
 pub mod utils;
+pub mod prelude;
 
 #[derive(Error, Debug)]
 pub enum OTError {

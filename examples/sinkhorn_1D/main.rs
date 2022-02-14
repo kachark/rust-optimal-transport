@@ -1,9 +1,8 @@
 use ndarray::{prelude::*, stack};
 use ndarray_stats::QuantileExt;
 
-use ot::regularized::sinkhorn::SinkhornKnopp;
-use ot::OTSolver;
 use rust_optimal_transport as ot;
+use ot::prelude::*;
 
 mod plot;
 
@@ -20,13 +19,13 @@ fn main() {
     let mean_target = 60.0;
     let std_target = 10.0;
 
-    let mut source_mass =
+    let source_mass =
         match ot::utils::get_1D_gauss_histogram(n_samples, mean_source, std_source) {
             Ok(val) => val,
             Err(err) => panic!("{:?}", err),
         };
 
-    let mut target_mass =
+    let target_mass =
         match ot::utils::get_1D_gauss_histogram(n_samples, mean_target, std_target) {
             Ok(val) => val,
             Err(err) => panic!("{:?}", err),
@@ -38,10 +37,10 @@ fn main() {
     let x_reshaped: Array2<f64> = x.into_shape((n_samples as usize, 1)).unwrap();
 
     // Compute ground cost matrix - Squared Euclidean distance
-    let mut ground_cost = ot::metrics::dist(
+    let mut ground_cost = dist(
         &x_reshaped,
         &x_reshaped,
-        ot::metrics::MetricType::SqEuclidean,
+        SqEuclidean,
     );
     let max_cost = ground_cost.max().unwrap();
 
@@ -55,14 +54,14 @@ fn main() {
         Err(error) => panic!("{:?}", error),
     };
 
-    //     // Plot using matplotlib
-    //     match plot::plot_py(
-    //         &source_samples,
-    //         &target_samples,
-    //         &ot_matrix,
-    //         "OT matrix sinkhorn",
-    //     ) {
-    //         Ok(_) => (),
-    //         Err(error) => panic!("{:?}", error),
-    //     };
+    // Plot using matplotlib
+    match plot::plot_py(
+        &source_samples,
+        &target_samples,
+        &ot_matrix,
+        "OT matrix sinkhorn",
+    ) {
+        Ok(_) => (),
+        Err(error) => panic!("{:?}", error),
+    };
 }
