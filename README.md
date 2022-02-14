@@ -35,7 +35,7 @@ rust-optimal-transport = { version = "0.1", features = ["blas"] }
 ```
 
 This will link against an installed instance of OpenBLAS on your system. For more details see the
-![ndarray-linalg](https://github.com/rust-ndarray/ndarray-linalg) crate.
+[ndarray-linalg](https://github.com/rust-ndarray/ndarray-linalg) crate.
 
 ## Examples
 
