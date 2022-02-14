@@ -78,7 +78,9 @@ impl<'a> OTSolver for SinkhornKnopp<'a> {
 
     }
 
-    fn solve(&self) -> Result<Array2<f64>, OTError> {
+    fn solve(&mut self) -> Result<Array2<f64>, OTError> {
+
+        self.check_shape()?;
 
         sinkhorn_knopp(
             self.source_weights,

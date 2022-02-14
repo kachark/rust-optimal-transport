@@ -34,13 +34,11 @@ fn emd_integration_test() {
     );
     ground_cost = &ground_cost / *ground_cost.max().unwrap();
 
-    let result = match ot::exact::emd(
+    let result = match ot::exact::EarthMovers::new(
         &mut source_mass,
         &mut target_mass,
         &mut ground_cost,
-        None,
-        None,
-    ) {
+    ).solve() {
         Ok(result) => result,
         Err(error) => panic!("{:?}", error),
     };

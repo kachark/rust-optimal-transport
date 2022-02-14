@@ -59,6 +59,6 @@ pub enum OTError {
 
 pub trait OTSolver {
     fn check_shape(&self) -> Result<(), OTError>;
-    fn solve(&self) -> Result<ndarray::Array2<f64>, OTError>;
+    fn solve(&mut self) -> Result<ndarray::Array2<f64>, OTError>;
 }
 

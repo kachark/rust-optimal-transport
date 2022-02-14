@@ -5,6 +5,8 @@ use std::fmt;
 use std::error::Error;
 use ndarray::prelude::*;
 
+use crate::OTSolver;
+
 use super::OTError;
 use ffi::emd_c;
 use utils::*;
@@ -51,6 +53,79 @@ impl From<i32> for FastTransportErrorCode {
     }
 }
 
+pub struct EarthMovers<'a> {
+    sample_weights: &'a mut Array1<f64>,
+    target_weights: &'a mut Array1<f64>,
+    cost: &'a mut Array2<f64>,
+    max_iter: i32,
+    center_dual: bool,
+}
+
+impl<'a> EarthMovers<'a> {
+    pub fn new(sample_weights: &'a mut Array1<f64>, target_weights: &'a mut Array1<f64>, cost: &'a mut Array2<f64>) -> Self {
+
+        Self {
+            sample_weights,
+            target_weights,
+            cost,
+            max_iter: 100000,
+            center_dual: true,
+        }
+    }
+
+    pub fn iterations<'b>(&'b mut self, max_iter: i32) -> &'b mut Self {
+        self.max_iter = max_iter;
+        self
+    }
+
+    pub fn center_dual<'b>(&'b mut self, center: bool) -> &'b mut Self {
+        self.center_dual = center;
+        self
+    }
+
+}
+
+impl<'a> OTSolver for EarthMovers<'a> {
+
+    fn check_shape(&self) -> Result<(), OTError> {
+
+        let mshape = self.cost.shape();
+        let m0 = mshape[0];
+        let m1 = mshape[1];
+        let dim_a = self.sample_weights.len();
+        let dim_b = self.target_weights.len();
+
+        if dim_a != m0 || dim_b != m1 {
+            return Err(OTError::WeightDimensionError {
+                dim_a,
+                dim_b,
+                dim_m_0: m0,
+                dim_m_1: m1,
+            });
+        }
+
+        Ok(())
+
+    }
+
+    fn solve(&mut self) -> Result<Array2<f64>, OTError> {
+
+        self.check_shape()?;
+
+        *self.target_weights *= self.sample_weights.sum() / self.target_weights.sum();
+
+        emd(self.sample_weights,
+            self.target_weights,
+            self.cost,
+            Some(self.max_iter),
+            Some(self.center_dual)
+            )
+
+    }
+
+}
+
+
 /// a: Source sample weights (defaults to uniform weight if empty)
 /// b: Target sample weights (defaults to uniform weight if empty)
 /// M: Loss matrix (row-major)
@@ -58,13 +133,14 @@ impl From<i32> for FastTransportErrorCode {
 /// not converged (default = 100000)
 /// center_dual: If True, centers the dual potential using function (default = true)
 #[allow(non_snake_case)]
-pub fn emd(
+pub(crate) fn emd(
     a: &mut Array1<f64>,
     b: &mut Array1<f64>,
     M: &mut Array2<f64>,
     num_iter_max: Option<i32>,
     center_dual: Option<bool>,
 ) -> Result<Array2<f64>, OTError> {
+
     // Defaults
     let iterations = match num_iter_max {
         Some(val) => val,
@@ -75,39 +151,6 @@ pub fn emd(
         Some(val) => val,
         None => false,
     };
-
-    let mshape = M.shape();
-    let m0 = mshape[0];
-    let m1 = mshape[1];
-    let dim_a;
-    let dim_b;
-
-    // if a and b empty, default to uniform distribution
-    if a.is_empty() {
-        *a = Array1::from_vec(vec![1f64 / (m0 as f64); m0]);
-        dim_a = m0;
-    } else {
-        dim_a = a.len();
-    }
-
-    if b.is_empty() {
-        *b = Array1::from_vec(vec![1f64 / (m1 as f64); m1]);
-        dim_b = m1;
-    } else {
-        dim_b = b.len();
-    }
-
-    // Check dimensions
-    if dim_a != m0 || dim_b != m1 {
-        return Err(OTError::WeightDimensionError {
-            dim_a,
-            dim_b,
-            dim_m_0: m0,
-            dim_m_1: m1,
-        });
-    }
-
-    *b *= a.sum() / b.sum();
 
     // binary indexing of non-zero weights
     let asel = a.mapv(|a| a > 0.);
@@ -156,6 +199,7 @@ pub fn emd(
 mod tests {
 
     use ndarray::array;
+    use crate::OTSolver;
 
     #[allow(non_snake_case)]
     #[test]
@@ -174,5 +218,22 @@ mod tests {
         // println!("{:?}", gamma);
 
         assert_eq!(gamma, truth);
+    }
+
+    #[test]
+    fn test_EarthMovers() {
+
+        let mut a = array![0.5, 0.5];
+        let mut b = array![0.5, 0.5];
+        let mut M = array![[0.0, 1.0], [1.0, 0.0]];
+
+        let test = match super::EarthMovers::new(&mut a, &mut b, &mut M).solve() {
+            Ok(result) => result,
+            Err(error) => panic!("{:?}", error),
+        };
+
+        let truth = array![[0.5, 0.0], [0.0, 0.5]];
+
+        assert_eq!(test, truth);
     }
 }
