@@ -1,10 +1,10 @@
-# ROT: Rust Optimal Transport
+# Rust Optimal Transport
 
 ![](https://github.com/kachark/rust-optimal-transport/blob/main/assets/ot_between_samples_2d_gaussian.png)
 
 This library provides solvers for performing regularized and unregularized Optimal Transport in Rust.
 
-Heavily inspired by [Python Optimal Transport](https://pythonot.github.io), this library provides the following solvers: 
+Inspired by [Python Optimal Transport](https://pythonot.github.io), this library provides the following solvers: 
 - [Network simplex](https://github.com/nbonneel/network_simplex) algorithm for linear program / Earth Movers Distance
 - Entropic regularization OT solvers including Sinkhorn Knopp and Greedy Sinkhorn
 - Unbalanced Sinkhorn Knopp
@@ -25,6 +25,18 @@ Edit your Cargo.toml with the following to use rust-optimal-transport in your pr
 rust-optimal-transport = "0.1"
 ```
 
+### Features
+
+If you would like to enable LAPACK backend (currently supporting OpenBLAS):
+
+```toml
+[dependencies]
+rust-optimal-transport = { version = "0.1", features = ["blas"] }
+```
+
+This will link against an installed instance of OpenBLAS on your system. For more details see the
+[ndarray-linalg](https://github.com/rust-ndarray/ndarray-linalg) crate.
+
 ## Examples
 
 ### Short examples
@@ -33,8 +45,8 @@ rust-optimal-transport = "0.1"
 
 ```rust
 use rust_optimal_transport as ot;
+use ot::prelude::*;
 
-use ot::lp::emd;
 ```
 
 * Compute OT matrix as the Earth Mover's Distance
@@ -52,25 +64,26 @@ let mu_target = array![4., 4.];
 let cov_target = array![[1., -0.8], [-0.8, 1.]];
 
 // Samples of a 2D gaussian distribution
-let source = ot::utils::distributions::sample_2D_gauss(n_samples, &mu_source, &cov_source).unwrap();
-let target = ot::utils::distributions::sample_2D_gauss(n_samples, &mu_target, &cov_target).unwrap();
+let source = ot::utils::sample_2D_gauss(n_samples, &mu_source, &cov_source).unwrap();
+let target = ot::utils::sample_2D_gauss(n_samples, &mu_target, &cov_target).unwrap();
 
-// Uniform distribution on the source and target samples
-let mut source_mass = Array1::<f64>::from_vec(vec![1f64 / (n_samples as f64); n_samples as usize]);
-let mut target_mass = Array1::<f64>::from_vec(vec![1f64 / (n_samples as f64); n_samples as usize]);
+// Uniform weights on the source and target distributions
+let mut source_weights = Array1::<f64>::from_elem(n, 1. / (n as f64));
+let mut target_weights = Array1::<f64>::from_elem(n, 1. / (n as f64));
 
 // Compute ground cost matrix - Squared Euclidean distance
-let mut ground_cost = ot::utils::metrics::dist(&source, &target, ot::utils::metrics::MetricType::SqEuclidean);
-let max_cost = ground_cost.max().unwrap();
+let mut cost = dist(&source, &target, SqEuclidean);
+let max_cost = cost.max().unwrap();
 
 // Normalize cost matrix for numerical stability
-ground_cost = &ground_cost / *max_cost;
+cost = &cost / *max_cost;
 
 // Compute optimal transport matrix as the Earth Mover's Distance
-let ot_matrix = match emd(&mut source_mass, &mut target_mass, &mut ground_cost, None, None) {
-    Ok(result) => result,
-    Err(error) => panic!("{:?}", error)
-};
+let ot_matrix = match EarthMovers::new(
+    &mut source_weights,
+    &mut target_weights,
+    &mut ground_cost
+).solve()?;
 
 ```
 
