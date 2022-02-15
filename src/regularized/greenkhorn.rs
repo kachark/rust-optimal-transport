@@ -98,8 +98,6 @@ impl<'a> OTSolver for Greenkhorn<'a> {
     }
 }
 
-
-
 /// Solves the entropic regularization optimal transport problem and return the OT matrix
 /// Uses the Greedy Sinkhorn method:
 /// Near-linear time approximation algorithms for optimal transport via Sinkhorn iteration
@@ -237,8 +235,8 @@ pub(crate) fn greenkhorn(
 #[cfg(test)]
 mod tests {
 
-    use ndarray::prelude::*;
     use crate::OTSolver;
+    use ndarray::prelude::*;
 
     #[test]
     fn test_greenkhorn() {
@@ -266,13 +264,7 @@ mod tests {
         let reg = 1.0;
         let m = array![[0.0, 1.0], [1.0, 0.0]];
 
-        let result = match super::Greenkhorn::new(
-            &a,
-            &b,
-            &m,
-            reg
-        ).solve()
-        {
+        let result = match super::Greenkhorn::new(&a, &b, &m, reg).solve() {
             Ok(result) => result,
             Err(error) => panic!("{:?}", error),
         };
@@ -283,5 +275,4 @@ mod tests {
 
         assert!(result.relative_eq(&truth, 1E-6, 1E-2));
     }
-
 }

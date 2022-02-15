@@ -157,7 +157,9 @@ fn greenkhorn_integration_test() {
         &mut target_mass,
         &mut ground_cost,
         gamma,
-    ).solve() {
+    )
+    .solve()
+    {
         Ok(result) => result,
         Err(err) => panic!("{:?}", err),
     };

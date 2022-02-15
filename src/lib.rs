@@ -6,10 +6,10 @@ extern crate blas_src;
 pub mod exact;
 pub mod metrics;
 pub mod ndarray_logical;
+pub mod prelude;
 pub mod regularized;
 pub mod unbalanced;
 pub mod utils;
-pub mod prelude;
 
 #[derive(Error, Debug)]
 pub enum OTError {

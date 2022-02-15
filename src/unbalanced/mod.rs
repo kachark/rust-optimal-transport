@@ -94,7 +94,9 @@ impl<'a> OTSolver for SinkhornKnoppUnbalanced<'a> {
         }
 
         if self.reg_m <= 0. {
-            return Err(OTError::ArgError("Marginal regularization term <= 0".to_string()));
+            return Err(OTError::ArgError(
+                "Marginal regularization term <= 0".to_string(),
+            ));
         }
 
         sinkhorn_knopp_unbalanced(
@@ -108,9 +110,6 @@ impl<'a> OTSolver for SinkhornKnoppUnbalanced<'a> {
         )
     }
 }
-
-
-
 
 /// Solves the unbalanced entropic regularization optimal transport problem and return the OT
 /// matrix
@@ -196,8 +195,8 @@ pub fn sinkhorn_knopp_unbalanced(
 #[cfg(test)]
 mod tests {
 
-    use crate::OTSolver;
     use crate::utils::get_1D_gauss_histogram;
+    use crate::OTSolver;
     use ndarray::prelude::*;
 
     #[test]
@@ -334,7 +333,9 @@ mod tests {
             &mut m,
             reg,
             reg_m,
-        ).solve() {
+        )
+        .solve()
+        {
             Ok(result) => result,
             Err(error) => panic!("{:?}", error),
         };
@@ -379,5 +380,4 @@ mod tests {
 
         assert!(result.relative_eq(&truth, 1E-6, 1E-2));
     }
-
 }

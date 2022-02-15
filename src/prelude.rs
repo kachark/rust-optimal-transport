@@ -7,21 +7,12 @@
 //!
 //! ```
 
-pub use crate::{
-    OTSolver, OTError
-};
+pub use crate::{OTError, OTSolver};
 
 pub use crate::exact::EarthMovers;
 
-pub use crate::regularized::{
-    sinkhorn::SinkhornKnopp,
-    greenkhorn::Greenkhorn,
-};
+pub use crate::regularized::{greenkhorn::Greenkhorn, sinkhorn::SinkhornKnopp};
 
 pub use crate::unbalanced::SinkhornKnoppUnbalanced;
 
-pub use crate::metrics::{
-    dist,
-    MetricType::SqEuclidean,
-    MetricType::Euclidean,
-};
+pub use crate::metrics::{dist, MetricType::Euclidean, MetricType::SqEuclidean};

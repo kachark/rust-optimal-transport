@@ -1,8 +1,8 @@
 use ndarray::{prelude::*, stack};
 use ndarray_stats::QuantileExt;
 
-use rust_optimal_transport as ot;
 use ot::prelude::*;
+use rust_optimal_transport as ot;
 
 mod plot;
 
@@ -19,17 +19,15 @@ fn main() {
     let mean_target = 60.0;
     let std_target = 10.0;
 
-    let source_mass =
-        match ot::utils::get_1D_gauss_histogram(n_samples, mean_source, std_source) {
-            Ok(val) => val,
-            Err(err) => panic!("{:?}", err),
-        };
+    let source_mass = match ot::utils::get_1D_gauss_histogram(n_samples, mean_source, std_source) {
+        Ok(val) => val,
+        Err(err) => panic!("{:?}", err),
+    };
 
-    let target_mass =
-        match ot::utils::get_1D_gauss_histogram(n_samples, mean_target, std_target) {
-            Ok(val) => val,
-            Err(err) => panic!("{:?}", err),
-        };
+    let target_mass = match ot::utils::get_1D_gauss_histogram(n_samples, mean_target, std_target) {
+        Ok(val) => val,
+        Err(err) => panic!("{:?}", err),
+    };
 
     let source_samples = stack![Axis(1), x, source_mass];
     let target_samples = stack![Axis(1), x, target_mass];
@@ -37,11 +35,7 @@ fn main() {
     let x_reshaped: Array2<f64> = x.into_shape((n_samples as usize, 1)).unwrap();
 
     // Compute ground cost matrix - Squared Euclidean distance
-    let mut ground_cost = dist(
-        &x_reshaped,
-        &x_reshaped,
-        SqEuclidean,
-    );
+    let mut ground_cost = dist(&x_reshaped, &x_reshaped, SqEuclidean);
     let max_cost = ground_cost.max().unwrap();
 
     // Normalize cost matrix for numerical stability
