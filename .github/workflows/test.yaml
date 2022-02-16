@@ -25,26 +25,7 @@ jobs:
 
       - name: Cargo test
         run: cargo test --verbose
+
+      - name: Cargo test --features blas
         run: cargo test --features blas --verbose
 
-#       - name: Run cargo test in release mode
-#         uses: actions-rs/cargo@v1
-#         with:
-#           command: test
-#           args: --all --release --features blas
-
-  clippy:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        rust:
-          - beta
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: ${{ matrix.rust }}
-          override: true
-          components: clippy
-      - run: cargo clippy --features docs
