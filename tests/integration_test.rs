@@ -1,7 +1,6 @@
 use ndarray::prelude::*;
 use ndarray_stats::QuantileExt;
-use ot::metrics::MetricType::SqEuclidean;
-use ot::OTSolver;
+use ot::prelude::*;
 use rust_optimal_transport as ot;
 
 #[test]

@@ -7,9 +7,9 @@
 //!
 //! ```
 
-pub use crate::{
-    OTSolver, OTError
-};
+pub use crate::OTSolver;
+
+pub use crate::error::OTError;
 
 pub use crate::exact::EarthMovers;
 

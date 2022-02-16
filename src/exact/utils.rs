@@ -1,5 +1,5 @@
 use super::FastTransportErrorCode;
-use crate::OTError;
+use crate::error::OTError;
 use ndarray::prelude::*;
 
 /// Finds a unique dual potential such that the same objective value is achieved for both
