@@ -3,7 +3,7 @@ on:
     branches:
       - main
 
-name: Release Packaging
+name: Build
 
 jobs:
   release:
