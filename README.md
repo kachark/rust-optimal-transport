@@ -22,7 +22,7 @@ Edit your Cargo.toml with the following to use rust-optimal-transport in your pr
 
 ```toml
 [dependencies]
-rust-optimal-transport = "0.1"
+rust-optimal-transport = "0.2"
 ```
 
 ### Features
@@ -31,7 +31,7 @@ If you would like to enable LAPACK backend (currently supporting OpenBLAS):
 
 ```toml
 [dependencies]
-rust-optimal-transport = { version = "0.1", features = ["blas"] }
+rust-optimal-transport = { version = "0.2", features = ["blas"] }
 ```
 
 This will link against an installed instance of OpenBLAS on your system. For more details see the
