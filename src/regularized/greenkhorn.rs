@@ -2,8 +2,8 @@ use anyhow::anyhow;
 use ndarray::prelude::*;
 use ndarray_stats::QuantileExt;
 
-use crate::OTSolver;
 use crate::error::OTError;
+use crate::OTSolver;
 
 /// Solves the entropic regularization optimal transport problem and return the OT matrix
 /// Uses the Greedy Sinkhorn method:

@@ -5,8 +5,8 @@ use ndarray::prelude::*;
 use std::error::Error;
 use std::fmt;
 
-use super::OTSolver;
 use super::error::OTError;
+use super::OTSolver;
 use ffi::emd_c;
 use utils::*;
 

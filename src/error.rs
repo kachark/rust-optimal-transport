@@ -1,5 +1,5 @@
-use thiserror::Error;
 use crate::exact;
+use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum OTError {
@@ -27,5 +27,3 @@ pub enum OTError {
     #[error(transparent)]
     Other(#[from] anyhow::Error),
 }
-
-

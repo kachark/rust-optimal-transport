@@ -2,8 +2,8 @@
 use ndarray::prelude::*;
 use ndarray_linalg::norm;
 
-use crate::OTSolver;
 use crate::error::OTError;
+use crate::OTSolver;
 
 /// Solves the entropic regularization optimal transport problem using the Sinkhorn-Knopp algorithm
 /// and returns the OT matrix
