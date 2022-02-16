@@ -22,7 +22,7 @@ The library has been tested on macOS. It requires a C++ compiler for building th
 - thiserror 1.0
 - ndarray 0.15
 
-#### Cargo installation
+### Cargo
 Edit your Cargo.toml with the following to use rust-optimal-transport in your project.
 
 ```toml
@@ -30,7 +30,7 @@ Edit your Cargo.toml with the following to use rust-optimal-transport in your pr
 rust-optimal-transport = "0.2"
 ```
 
-### Features
+#### Features
 
 If you would like to enable LAPACK backend (currently supporting OpenBLAS):
 
