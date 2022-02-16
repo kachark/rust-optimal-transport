@@ -2,10 +2,12 @@
 
 ![](https://github.com/kachark/rust-optimal-transport/actions/workflows/build.yaml/badge.svg?branch=main)
 ![Crates.io](https://img.shields.io/crates/v/rust-optimal-transport)
-
-![](https://github.com/kachark/rust-optimal-transport/blob/main/assets/ot_between_samples_2d_gaussian.png)
+![GitHub](https://img.shields.io/github/license/kachark/rust-optimal-transport)
 
 This library provides solvers for performing regularized and unregularized Optimal Transport in Rust.
+
+<!-- ![](https://github.com/kachark/rust-optimal-transport/blob/main/assets/ot_between_samples_2d_gaussian.png) -->
+<img src="https://github.com/kachark/rust-optimal-transport/blob/main/assets/ot_between_samples_2d_gaussian.png" width="533" height="400">
 
 Inspired by [Python Optimal Transport](https://pythonot.github.io), this library provides the following solvers: 
 - [Network simplex](https://github.com/nbonneel/network_simplex) algorithm for linear program / Earth Movers Distance
