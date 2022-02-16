@@ -85,7 +85,7 @@ cost = &cost / *max_cost;
 let ot_matrix = match EarthMovers::new(
     &mut source_weights,
     &mut target_weights,
-    &mut ground_cost
+    &mut cost
 ).solve()?;
 
 ```
