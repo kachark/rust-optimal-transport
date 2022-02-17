@@ -5,14 +5,59 @@ use ndarray_linalg::norm;
 use crate::error::OTError;
 use crate::OTSolver;
 
-/// Solves the entropic regularization optimal transport problem using the Sinkhorn-Knopp algorithm
-/// and returns the OT matrix
-/// source_weights: Weights on samples from the source distribution
-/// target_weights: Weights on samples from the target distribution
-/// cost: Distance between samples in the source and target distributions
-/// reg: Entropy regularization term > 0
-/// max_iter: Max number of iterations (default = 1000)
-/// threshold: Error convergence threshold (> 0) (default = 1E-9)
+/// Solves the entropic regularization optimal transport problem using the SinkhornKnopp algorithm and returns the OT matrix
+///
+/// ```rust
+/// use rust_optimal_transport as ot;
+/// use ot::prelude::*;
+/// use ndarray::prelude::*;
+/// use ndarray_stats::QuantileExt;
+///
+/// // Generate data
+/// let n = 100;
+///
+/// // Mean, Covariance of the source distribution
+/// let mu_source = array![0., 0.];
+/// let cov_source = array![[1., 0.], [0., 1.]];
+///
+/// // Mean, Covariance of the target distribution
+/// let mu_target = array![4., 4.];
+/// let cov_target = array![[1., -0.8], [-0.8, 1.]];
+///
+/// // Samples of a 2D gaussian distribution
+/// let source = ot::utils::sample_2D_gauss(n, &mu_source, &cov_source).unwrap();
+/// let target = ot::utils::sample_2D_gauss(n, &mu_target, &cov_target).unwrap();
+///
+/// // Uniform weights on the source and target distributions
+/// let mut source_weights = Array1::<f64>::from_elem(n, 1. / (n as f64));
+/// let mut target_weights = Array1::<f64>::from_elem(n, 1. / (n as f64));
+///
+/// // Compute the cost between distributions
+/// let mut cost = dist(&source, &target, SqEuclidean);
+///
+/// // Normalize cost matrix for numerical stability
+/// let max_cost = cost.max().unwrap();
+/// cost = &cost / *max_cost;
+///
+/// let regularization = 1E-2;
+///
+/// // Compute optimal transport matrix as the Earth Mover's Distance
+/// let ot_matrix = match SinkhornKnopp::new(
+///     &source_weights,
+///     &target_weights,
+///     &cost,
+///     regularization,
+/// ).solve() {
+///     Ok(result) => result,
+///     Err(error) => panic!("{:?}", error),
+/// };
+///
+/// ```
+///
+/// source_weights and target_weights represent histograms of the Source and Target distributions,
+/// respectively.
+///
+
 pub struct SinkhornKnopp<'a> {
     source_weights: &'a Array1<f64>,
     target_weights: &'a Array1<f64>,
@@ -100,13 +145,6 @@ impl<'a> OTSolver for SinkhornKnopp<'a> {
     }
 }
 
-/// Solves the entropic regularization optimal transport problem and returns the OT matrix
-/// a: Source sample weights (defaults to uniform weight if empty)
-/// b: Target sample weights (defaults to uniform weight if empty)
-/// M: Loss matrix
-/// reg: Entropy regularization term > 0
-/// num_iter_max: Max number of iterations (default = 1000)
-/// stop_threshold: Stop threshold on error (> 0) (default = 1E-6)
 fn sinkhorn_knopp(
     a: &Array1<f64>,
     b: &Array1<f64>,

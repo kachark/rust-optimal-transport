@@ -54,10 +54,6 @@ impl From<i32> for FastTransportErrorCode {
 
 /// Solves the unregularized Optimal Transport (Earth Movers Distance) between source and target distributions with a given cost matrix.
 ///
-/// cost: Distance between samples in the source and target distributions
-///
-/// source_weights and target_weights represent the histogram 
-///
 /// ```rust
 /// use rust_optimal_transport as ot;
 /// use ot::prelude::*;
@@ -83,7 +79,7 @@ impl From<i32> for FastTransportErrorCode {
 /// let mut source_weights = Array1::<f64>::from_elem(n, 1. / (n as f64));
 /// let mut target_weights = Array1::<f64>::from_elem(n, 1. / (n as f64));
 ///
-/// // Compute ground cost matrix - Squared Euclidean distance
+/// // Compute the cost between distributions
 /// let mut cost = dist(&source, &target, SqEuclidean);
 ///
 /// // Normalize cost matrix for numerical stability
@@ -101,6 +97,9 @@ impl From<i32> for FastTransportErrorCode {
 /// };
 ///
 /// ```
+///
+/// source_weights and target_weights represent histograms of the Source and Target distributions,
+/// respectively.
 ///
 pub struct EarthMovers<'a> {
     source_weights: &'a mut Array1<f64>,
@@ -167,11 +166,6 @@ impl<'a> OTSolver for EarthMovers<'a> {
     }
 }
 
-/// a: Source sample weights (defaults to uniform weight if empty)
-/// b: Target sample weights (defaults to uniform weight if empty)
-/// M: Loss matrix (row-major)
-/// num_iter_max: maximum number of iterations before stopping the optimization algorithm if it has
-/// not converged (default = 100000)
 #[allow(non_snake_case)]
 fn emd(
     a: &mut Array1<f64>,

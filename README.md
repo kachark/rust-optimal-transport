@@ -77,14 +77,14 @@ let target = ot::utils::sample_2D_gauss(n, &mu_target, &cov_target).unwrap();
 let mut source_weights = Array1::<f64>::from_elem(n, 1. / (n as f64));
 let mut target_weights = Array1::<f64>::from_elem(n, 1. / (n as f64));
 
-// Compute ground cost matrix
+// Compute the cost between the distributions
 let mut cost = dist(&source, &target, SqEuclidean);
 
 // Normalize cost matrix for numerical stability
 let max_cost = cost.max().unwrap();
 cost = &cost / *max_cost;
 
-// Compute optimal transport matrix as the Earth Mover's Distance
+// Compute the optimal transport matrix
 let ot_matrix = match EarthMovers::new(
     &mut source_weights,
     &mut target_weights,
