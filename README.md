@@ -57,30 +57,31 @@ use ot::prelude::*;
 * Compute OT matrix as the Earth Mover's Distance
 
 ```rust
-// Generate data
-let n_samples = 100;
 
-// Mean, Covariance of the source distribution
+use ndarray::prelude::*;
+use ndarray_stats::QuantileExt; // max()
+
+// Generate data by sampling a 2D gaussian distribution
+let n = 100;
+
 let mu_source = array![0., 0.];
 let cov_source = array![[1., 0.], [0., 1.]];
 
-// Mean, Covariance of the target distribution
 let mu_target = array![4., 4.];
 let cov_target = array![[1., -0.8], [-0.8, 1.]];
 
-// Samples of a 2D gaussian distribution
-let source = ot::utils::sample_2D_gauss(n_samples, &mu_source, &cov_source).unwrap();
-let target = ot::utils::sample_2D_gauss(n_samples, &mu_target, &cov_target).unwrap();
+let source = ot::utils::sample_2D_gauss(n, &mu_source, &cov_source).unwrap();
+let target = ot::utils::sample_2D_gauss(n, &mu_target, &cov_target).unwrap();
 
 // Uniform weights on the source and target distributions
 let mut source_weights = Array1::<f64>::from_elem(n, 1. / (n as f64));
 let mut target_weights = Array1::<f64>::from_elem(n, 1. / (n as f64));
 
-// Compute ground cost matrix - Squared Euclidean distance
+// Compute ground cost matrix
 let mut cost = dist(&source, &target, SqEuclidean);
-let max_cost = cost.max().unwrap();
 
 // Normalize cost matrix for numerical stability
+let max_cost = cost.max().unwrap();
 cost = &cost / *max_cost;
 
 // Compute optimal transport matrix as the Earth Mover's Distance

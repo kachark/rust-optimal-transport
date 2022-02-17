@@ -20,7 +20,7 @@ pub struct SinkhornKnoppUnbalanced<'a> {
     cost: &'a Array2<f64>,
     reg: f64,
     reg_m: f64,
-    max_iter: i32,
+    iterations: i32,
     threshold: f64,
 }
 
@@ -38,13 +38,13 @@ impl<'a> SinkhornKnoppUnbalanced<'a> {
             cost,
             reg,
             reg_m,
-            max_iter: 1000,
+            iterations: 1000,
             threshold: 1E-9,
         }
     }
 
-    pub fn iterations<'b>(&'b mut self, max_iter: i32) -> &'b mut Self {
-        self.max_iter = max_iter;
+    pub fn iterations<'b>(&'b mut self, iterations: i32) -> &'b mut Self {
+        self.iterations = iterations;
         self
     }
 
@@ -100,14 +100,18 @@ impl<'a> OTSolver for SinkhornKnoppUnbalanced<'a> {
             ));
         }
 
+        if self.iterations <= 0 {
+            return Err(OTError::ArgError("Iterations not a valid value. Must be > 0".to_string()));
+        }
+
         sinkhorn_knopp_unbalanced(
             self.source_weights,
             self.target_weights,
             self.cost,
             self.reg,
             self.reg_m,
-            Some(self.max_iter),
-            Some(self.threshold),
+            self.iterations,
+            self.threshold,
         )
     }
 }
@@ -121,14 +125,14 @@ impl<'a> OTSolver for SinkhornKnoppUnbalanced<'a> {
 /// reg_m: Marginal relaxation term > 0
 /// num_iter_max: Max number of iterations (default = 1000)
 /// stop_threshold: Stop threshold on error (> 0) (default = 1E-6)
-pub fn sinkhorn_knopp_unbalanced(
+fn sinkhorn_knopp_unbalanced(
     a: &Array1<f64>,
     b: &Array1<f64>,
     M: &Array2<f64>,
     reg: f64,
     reg_m: f64,
-    num_iter_max: Option<i32>,
-    stop_threshold: Option<f64>,
+    iterations: i32,
+    threshold: f64,
 ) -> Result<Array2<f64>, OTError> {
     let mut err;
     let mut ktu;
@@ -138,17 +142,6 @@ pub fn sinkhorn_knopp_unbalanced(
     let dim_a = a.len();
     let dim_b = b.len();
     let fi = reg_m / (reg_m + reg);
-
-    // Defaults
-    let iterations = match num_iter_max {
-        Some(val) => val,
-        None => 1000,
-    };
-
-    let stop = match stop_threshold {
-        Some(val) => val,
-        None => 1E-9,
-    };
 
     // we assume that no distances are null except those of the diagonal distances
     let mut u = Array1::<f64>::from_elem(dim_a, 1. / (dim_a as f64));
@@ -184,7 +177,7 @@ pub fn sinkhorn_knopp_unbalanced(
         if count % 10 == 0 {
             err = norm::Norm::norm_l1(&(&v - &v_prev));
 
-            if err < stop {
+            if err < threshold {
                 break;
             }
         }
@@ -243,8 +236,8 @@ mod tests {
             &mut m,
             reg,
             reg_m,
-            None,
-            None,
+            1000,
+            1E-9,
         ) {
             Ok(result) => result,
             Err(error) => panic!("{:?}", error),

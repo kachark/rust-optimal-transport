@@ -31,7 +31,7 @@ fn emd_integration_test() {
     ground_cost = &ground_cost / *ground_cost.max().unwrap();
 
     let result =
-        match ot::exact::EarthMovers::new(&mut source_mass, &mut target_mass, &mut ground_cost)
+        match EarthMovers::new(&mut source_mass, &mut target_mass, &mut ground_cost)
             .solve()
         {
             Ok(result) => result,
@@ -89,7 +89,7 @@ fn sinkhorn_integration_test() {
     ground_cost = &ground_cost / *ground_cost.max().unwrap();
 
     // Solve Sinkhorn Distance
-    let result = match ot::regularized::sinkhorn::SinkhornKnopp::new(
+    let result = match SinkhornKnopp::new(
         &source_mass,
         &target_mass,
         &ground_cost,
@@ -151,7 +151,7 @@ fn greenkhorn_integration_test() {
     let mut ground_cost = ot::metrics::dist(&source, &target, SqEuclidean);
     ground_cost = &ground_cost / *ground_cost.max().unwrap();
 
-    let result = match ot::regularized::greenkhorn::Greenkhorn::new(
+    let result = match Greenkhorn::new(
         &mut source_mass,
         &mut target_mass,
         &mut ground_cost,
@@ -191,7 +191,7 @@ fn unbalanced_sinkhorn_integration_test() {
     let mean_target = 60.0;
     let std_target = 10.0;
 
-    let mut source_mass = match ot::utils::get_1D_gauss_histogram(n, mean_source, std_source) {
+    let source_mass = match ot::utils::get_1D_gauss_histogram(n, mean_source, std_source) {
         Ok(val) => val,
         Err(err) => panic!("{:?}", err),
     };
@@ -209,15 +209,14 @@ fn unbalanced_sinkhorn_integration_test() {
     let mut ground_cost = ot::metrics::dist(&x_reshaped, &x_reshaped, SqEuclidean);
     ground_cost = &ground_cost / *ground_cost.max().unwrap();
 
-    let result = match ot::unbalanced::sinkhorn_knopp_unbalanced(
-        &mut source_mass,
-        &mut target_mass,
-        &mut ground_cost,
+    let result = match SinkhornKnoppUnbalanced::new(
+        &source_mass,
+        &target_mass,
+        &ground_cost,
         epsilon,
         alpha,
-        None,
-        None,
-    ) {
+    ).solve()
+    {
         Ok(result) => result,
         Err(err) => panic!("{:?}", err),
     };

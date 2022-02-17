@@ -20,7 +20,7 @@ pub enum DistributionError {
 /// mean: mean value of distribution
 /// std: standard distribution of distribution
 pub fn get_1D_gauss_histogram(
-    n: i32,
+    n: usize,
     mean: f64,
     std: f64,
 ) -> Result<Array1<f64>, DistributionError> {
@@ -44,17 +44,11 @@ pub fn get_1D_gauss_histogram(
 /// mean: mean values (x,y) of distribution
 /// cov: covariance matrix of the distribution
 pub fn sample_2D_gauss(
-    n: i32,
+    n: usize,
     mean: &Array1<f64>,
     cov: &Array2<f64>,
 ) -> Result<Array2<f64>, DistributionError> {
     let cov_shape = cov.shape();
-
-    if n <= 0 {
-        return Err(DistributionError::Oops(
-            "n is not greater than zero".to_string(),
-        ));
-    }
 
     if mean.is_empty() || cov.is_empty() {
         return Err(DistributionError::Oops(
@@ -69,7 +63,7 @@ pub fn sample_2D_gauss(
     }
 
     let mut rng = thread_rng();
-    let mut samples = Array2::<f64>::zeros((n as usize, 2));
+    let mut samples = Array2::<f64>::zeros((n, 2));
     for mut row in samples.axis_iter_mut(Axis(0)) {
         row[0] = rng.sample(StandardNormal);
         row[1] = rng.sample(StandardNormal);
