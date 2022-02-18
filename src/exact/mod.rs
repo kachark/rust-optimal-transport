@@ -152,7 +152,9 @@ impl<'a> OTSolver for EarthMovers<'a> {
         self.check_shape()?;
 
         if self.iterations <= 0 {
-            return Err(OTError::ArgError("Iterations not a valid value. Must be > 0".to_string()));
+            return Err(OTError::ArgError(
+                "Iterations not a valid value. Must be > 0".to_string(),
+            ));
         }
 
         *self.target_weights *= self.source_weights.sum() / self.target_weights.sum();
@@ -173,7 +175,6 @@ fn emd(
     M: &mut Array2<f64>,
     iterations: i32,
 ) -> Result<Array2<f64>, OTError> {
-
     // Call FastTransport via wrapper
     let (G, _cost, mut _u, mut _v, result_code) = emd_c(a, b, M, iterations);
 

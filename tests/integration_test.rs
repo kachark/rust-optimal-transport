@@ -31,9 +31,7 @@ fn emd_integration_test() {
     ground_cost = &ground_cost / *ground_cost.max().unwrap();
 
     let result =
-        match EarthMovers::new(&mut source_mass, &mut target_mass, &mut ground_cost)
-            .solve()
-        {
+        match EarthMovers::new(&mut source_mass, &mut target_mass, &mut ground_cost).solve() {
             Ok(result) => result,
             Err(error) => panic!("{:?}", error),
         };
@@ -89,14 +87,7 @@ fn sinkhorn_integration_test() {
     ground_cost = &ground_cost / *ground_cost.max().unwrap();
 
     // Solve Sinkhorn Distance
-    let result = match SinkhornKnopp::new(
-        &source_mass,
-        &target_mass,
-        &ground_cost,
-        gamma,
-    )
-    .solve()
-    {
+    let result = match SinkhornKnopp::new(&source_mass, &target_mass, &ground_cost, gamma).solve() {
         Ok(result) => result,
         Err(err) => panic!("{:?}", err),
     };
@@ -151,13 +142,8 @@ fn greenkhorn_integration_test() {
     let mut ground_cost = ot::metrics::dist(&source, &target, SqEuclidean);
     ground_cost = &ground_cost / *ground_cost.max().unwrap();
 
-    let result = match Greenkhorn::new(
-        &mut source_mass,
-        &mut target_mass,
-        &mut ground_cost,
-        gamma,
-    )
-    .solve()
+    let result = match Greenkhorn::new(&mut source_mass, &mut target_mass, &mut ground_cost, gamma)
+        .solve()
     {
         Ok(result) => result,
         Err(err) => panic!("{:?}", err),
@@ -215,7 +201,8 @@ fn unbalanced_sinkhorn_integration_test() {
         &ground_cost,
         epsilon,
         alpha,
-    ).solve()
+    )
+    .solve()
     {
         Ok(result) => result,
         Err(err) => panic!("{:?}", err),
