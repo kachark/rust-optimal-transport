@@ -33,13 +33,14 @@ ndarray-rand = "0.14"
 cxx-build = "1.0"
 
 [dev-dependencies]
-pyo3 = { version = "0.15.1", features = ["auto-initialize"] }
-numpy = "0.15"
+pyo3 = { version = "0.16.5", features = ["auto-initialize", "extension-module"] }
+numpy = "0.16"
 rand = "0.8"
 criterion = "0.3"
 
 [features]
 default = ["ndarray-linalg-openblas-system"]
+# default = ["ndarray-linalg-openblas-static"]
 blas = ["default", "openblas-system"]
 
 # ndarray-linalg LAPACK FFI
