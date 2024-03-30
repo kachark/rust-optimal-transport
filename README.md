@@ -85,7 +85,7 @@ let max_cost = cost.max().unwrap();
 cost = &cost / *max_cost;
 
 // Compute the optimal transport matrix
-let ot_matrix = match EarthMovers::new(
+let ot_matrix = EarthMovers::new(
     &mut source_weights,
     &mut target_weights,
     &mut cost

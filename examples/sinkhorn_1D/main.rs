@@ -1,7 +1,7 @@
 use ndarray::{prelude::*, stack};
 use ndarray_stats::QuantileExt;
 
-use ot::prelude::*;
+use rust_optimal_transport::prelude::*;
 use rust_optimal_transport as ot;
 
 mod plot;
@@ -35,14 +35,14 @@ fn main() {
     let x_reshaped: Array2<f64> = x.into_shape((n_samples as usize, 1)).unwrap();
 
     // Compute ground cost matrix - Squared Euclidean distance
-    let mut ground_cost = dist(&x_reshaped, &x_reshaped, SqEuclidean);
+    let mut ground_cost = ot::metrics::dist(&x_reshaped, &x_reshaped, SqEuclidean);
     let max_cost = ground_cost.max().unwrap();
 
     // Normalize cost matrix for numerical stability
     ground_cost = &ground_cost / *max_cost;
 
     // Compute optimal transport matrix as the Earth Mover's Distance
-    let ot_matrix = match SinkhornKnopp::new(&source_mass, &target_mass, &ground_cost, reg).solve()
+    let ot_matrix = match ot::regularized::sinkhorn::SinkhornKnopp::new(&source_mass, &target_mass, &ground_cost, reg).solve()
     {
         Ok(result) => result,
         Err(error) => panic!("{:?}", error),
