@@ -131,7 +131,9 @@ impl<'a> OTSolver for SinkhornKnopp<'a> {
         }
 
         if self.iterations <= 0 {
-            return Err(OTError::ArgError("Iterations not a valid value. Must be > 0".to_string()));
+            return Err(OTError::ArgError(
+                "Iterations not a valid value. Must be > 0".to_string(),
+            ));
         }
 
         sinkhorn_knopp(

@@ -85,12 +85,22 @@ let max_cost = cost.max().unwrap();
 cost = &cost / *max_cost;
 
 // Compute the optimal transport matrix
-let ot_matrix = match EarthMovers::new(
+let ot_matrix = EarthMovers::new(
     &mut source_weights,
     &mut target_weights,
     &mut cost
 ).solve()?;
 
+```
+
+## Testing
+```
+cargo test
+```
+
+If using M1 mac and linking against Homebrew's OpenBLAS, add the following to `build.rs`:
+```
+println!("cargo:rustc-link-search=/opt/homebrew/opt/openblas/lib");
 ```
 
 ## Acknowledgements

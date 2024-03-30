@@ -61,7 +61,6 @@ use crate::OTSolver;
 /// respectively.
 ///
 
-
 pub struct SinkhornKnoppUnbalanced<'a> {
     source_weights: &'a Array1<f64>,
     target_weights: &'a Array1<f64>,
@@ -149,7 +148,9 @@ impl<'a> OTSolver for SinkhornKnoppUnbalanced<'a> {
         }
 
         if self.iterations <= 0 {
-            return Err(OTError::ArgError("Iterations not a valid value. Must be > 0".to_string()));
+            return Err(OTError::ArgError(
+                "Iterations not a valid value. Must be > 0".to_string(),
+            ));
         }
 
         sinkhorn_knopp_unbalanced(

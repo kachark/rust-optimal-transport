@@ -133,7 +133,9 @@ impl<'a> OTSolver for Greenkhorn<'a> {
         }
 
         if self.iterations <= 0 {
-            return Err(OTError::ArgError("Iterations not a valid value. Must be > 0".to_string()));
+            return Err(OTError::ArgError(
+                "Iterations not a valid value. Must be > 0".to_string(),
+            ));
         }
 
         greenkhorn(
@@ -166,7 +168,6 @@ fn greenkhorn(
     iterations: i32,
     threshold: f64,
 ) -> Result<Array2<f64>, OTError> {
-
     let dim_a = a.len();
     let dim_b = b.len();
     let mut stop_val;
