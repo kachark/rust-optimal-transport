@@ -21,11 +21,9 @@ println!("cargo:rustc-link-search=/opt/homebrew/opt/openblas/lib");
 ```
 
 ## Anaconda
-To link against Anaconda python, you may need to add the following to `build.rs`:
+To link against Anaconda python (for matplotlib visualizations), you may need to add the following to `build.rs`:
 ```
-println!(
-    "cargo:rustc-link-arg=-Wl,-rpath,/path/to/anaconda3/lib/"
-);
+println!("cargo:rustc-link-arg=-Wl,-rpath,/path/to/anaconda3/lib/");
 
 ```
 
