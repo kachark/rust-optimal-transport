@@ -15,7 +15,7 @@ NOTE: sinkhorn_1D example must be run from sinkhorn_1D directory in order to use
 python script for visualization. See below:
 
 ## M1 Mac + Homebrew OpenBLAS
-If OpenBLAS is installed Homebrew on an M1 mac, you may need to add the following to `build.rs`:
+If OpenBLAS is installed via Homebrew on an M1 mac, you may need to add the following to `build.rs`:
 ```
 println!("cargo:rustc-link-search=/opt/homebrew/opt/openblas/lib");
 ```
