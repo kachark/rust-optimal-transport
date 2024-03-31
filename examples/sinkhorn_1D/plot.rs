@@ -14,7 +14,6 @@ pub fn plot_py(
 
     // Start the python interpreter
     Python::with_gil(|py| {
-
         // Import matplotlib
         let plt = py.import("matplotlib.pyplot")?;
 
