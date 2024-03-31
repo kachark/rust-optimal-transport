@@ -36,7 +36,7 @@ cxx-build = "1.0"
 pyo3 = { version = "0.20", features = ["auto-initialize"] }
 numpy = "0.20"
 rand = "0.8"
-criterion = "0.3"
+criterion = { version = "0.4", features = ["html_reports"] }
 
 [features]
 default = ["ndarray-linalg-openblas-system"]

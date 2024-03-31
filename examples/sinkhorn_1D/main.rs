@@ -1,8 +1,8 @@
 use ndarray::{prelude::*, stack};
 use ndarray_stats::QuantileExt;
 
-use rust_optimal_transport as ot;
 use ot::prelude::*;
+use rust_optimal_transport as ot;
 
 mod plot;
 
